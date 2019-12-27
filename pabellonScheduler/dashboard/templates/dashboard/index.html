@@ -1,0 +1,151 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %} Sube tu archivo {% endblock title %}
+
+{% block stylesheets %}
+{{ block.super}}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+{% endblock %}
+
+
+{% block content %}
+<main class="main-content bgc-grey-100">
+  <div id="mainContent">
+    <div class="row gap-20 masonry pos-r">
+      <div class="masonry-sizer col-md-6"></div>
+      <div class="masonry-item w-100">
+        <div class="row gap-20">
+          <div class="col-md-12">
+            <div class="bgc-white p-20 bd">
+              <h6 class="c-grey-900">Subir archivo de Lista de Espera</h6>
+              <div class="mT-30">
+                <form action="{% url 'upload-file' %}" method="post" enctype="multipart/form-data">
+                  {% csrf_token %}
+                  {% if mensaje %}
+                    <div class="alert alert-danger" role="alert">
+                      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span>
+                      </button>
+                      <strong>Error:</strong> {{ mensaje }}
+                    </div>
+
+                  {% endif %}
+                  <div class="form-group">
+                    <label for="examplefile">Archivo</label>
+                    <input name="file" type="file" class="form-control" id="examplefile" aria-describedby="filelHelp" placeholder="Enter email">
+                    <small id="fileHelp" class="form-text text-muted">Archivo de lista de espera quirúrgica .</small>
+                  </div>
+                  <br>
+                  <h6 class="c-grey-900">Configuración del Programador</h6>
+                  <div class="form-row">
+                    <div class="form-group col-md-2">
+                      <label for="inputDias">Fecha Programación</label>
+                      <input id="date" name="date" type="text" class="form-control" value='{% now "d/m/Y" %}' autocomplete="off">
+                    </div>
+                    <div class="form-group col-md-2">
+                      <label for="inputDias">N° Días a trabajar</label>
+                      <input name="ndays" type="text" class="form-control" id="inputDias" value="5">
+                    </div>
+                    <div class="form-group col-md-2">
+                      <label for="inputSala">N° Salas de Operación </label>
+                      <input name="nrooms" type="text" class="form-control" id="inputSala" value="2">
+                    </div>
+                    <div class="form-group col-md-2">
+                      <label for="inputAM">Horas en bloque AM</label>
+                      <input name="hoursam" type="text" class="form-control" id="inputAM" value="5">
+                    </div>
+                    <div class="form-group col-md-2">
+                      <label for="inputPM">Horas en bloque PM</label>
+                      <input name="hourspm" type="text" class="form-control" id="inputPM" value="3">
+                    </div>
+                  </div>
+                  <!--<div class="form-group row">-->
+                    <!--<label for="inputEmail3" class="col-sm-2 col-form-label">Email</label>-->
+                    <!--<div class="col-sm-10">-->
+                      <!--<input type="email" class="form-control" id="inputEmail3" placeholder="Email">-->
+                    <!--</div>-->
+                  <!--</div>-->
+                  <!--<div class="form-group row">-->
+                    <!--<label for="inputPassword3" class="col-sm-2 col-form-label">Password</label>-->
+                    <!--<div class="col-sm-10">-->
+                      <!--<input type="password" class="form-control" id="inputPassword3" placeholder="Password">-->
+                    <!--</div>-->
+                  <!--</div>-->
+                  <!--<fieldset class="form-group">-->
+                    <!--<div class="row">-->
+                      <!--<legend class="col-form-label col-sm-2 pt-0">Radios</legend>-->
+                      <!--<div class="col-sm-10">-->
+                        <!--<div class="form-check">-->
+                          <!--<input class="form-check-input" type="radio" name="gridRadios" id="gridRadios1" value="option1" checked>-->
+                          <!--<label class="form-check-label" for="gridRadios1">-->
+                            <!--First radio-->
+                          <!--</label>-->
+                        <!--</div>-->
+                        <!--<div class="form-check">-->
+                          <!--<input class="form-check-input" type="radio" name="gridRadios" id="gridRadios2" value="option2">-->
+                          <!--<label class="form-check-label" for="gridRadios2">-->
+                            <!--Second radio-->
+                          <!--</label>-->
+                        <!--</div>-->
+                        <!--<div class="form-check disabled">-->
+                          <!--<input class="form-check-input" type="radio" name="gridRadios" id="gridRadios3" value="option3" disabled>-->
+                          <!--<label class="form-check-label" for="gridRadios3">-->
+                            <!--Third disabled radio-->
+                          <!--</label>-->
+                        <!--</div>-->
+                      <!--</div>-->
+                    <!--</div>-->
+                  <!--</fieldset>-->
+                  <!--<div class="form-group row">-->
+                    <!--<div class="col-sm-2">Checkbox</div>-->
+                    <!--<div class="col-sm-10">-->
+                      <!--<div class="form-check">-->
+                        <!--<input class="form-check-input" type="checkbox" id="gridCheck1">-->
+                        <!--<label class="form-check-label" for="gridCheck1">-->
+                          <!--Example checkbox-->
+                        <!--</label>-->
+                      <!--</div>-->
+                    <!--</div>-->
+                  <!--</div>-->
+                  <button type="submit" class="btn btn-primary">Hacer Programación</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row gap-20 masonry pos-r">
+      <div class="masonry-sizer col-md-6"></div>
+      <div class="masonry-item w-100">
+        <div class="row gap-20">
+          <div class="col-md-12">
+            <div class="bgc-white p-20 bd">
+              <h6 class="c-grey-900">Programaciones anteriores</h6>
+              <div class="mT-30">
+                {% for file in files %}
+                  <a href="programacion/{{file.pk}}">{{file.created}} - {{file.file}}</a><br><br>
+                {% endfor %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</main>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ block.super }}
+  <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+  <script>
+    $('#date').datepicker({
+        language: 'es',
+        orientation: 'bottom'
+    });
+  </script>
+{% endblock javascripts %}

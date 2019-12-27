@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    {% block head %}
+    {% block meta %}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
+    {% endblock meta %}
+    <title> Programador de Pabellón | {% block title %}{% endblock %}</title>
+
+    <style>#loader{transition:all .3s ease-in-out;opacity:1;visibility:visible;position:fixed;height:100vh;width:100%;background:#fff;z-index:90000}#loader.fadeOut{opacity:0;visibility:hidden}.spinner{width:40px;height:40px;position:absolute;top:calc(50% - 20px);left:calc(50% - 20px);background-color:#333;border-radius:100%;-webkit-animation:sk-scaleout 1s infinite ease-in-out;animation:sk-scaleout 1s infinite ease-in-out}@-webkit-keyframes sk-scaleout{0%{-webkit-transform:scale(0)}100%{-webkit-transform:scale(1);opacity:0}}@keyframes sk-scaleout{0%{-webkit-transform:scale(0);transform:scale(0)}100%{-webkit-transform:scale(1);transform:scale(1);opacity:0}}</style>
+
+    {% block stylesheets %}
+      <link href="/static/style.css" rel="stylesheet">
+    {% endblock stylesheets %}
+
+    {% endblock head %}
+  </head>
+  <body class="app">
+
+    <!-- @Page Loader -->
+    <!-- =================================================== -->
+    <div id="loader">
+      <div class="spinner"></div>
+    </div>
+
+    <script>
+      window.addEventListener('load', function load() {
+        const loader = document.getElementById('loader');
+        setTimeout(function() {
+          loader.classList.add('fadeOut');
+        }, 300);
+      });
+    </script>
+
+    <!-- @App Content -->
+    <!-- =================================================== -->
+    <div>
+      <!-- #Left Sidebar ==================== -->
+      {% block sidebar %}
+        {% include "dashboard/sidebar.html" %}
+      {% endblock sidebar %}
+
+      <!-- #Main ============================ -->
+      <div class="page-container">
+        <!-- ### $Topbar ### -->
+        {% block top_nav %}
+          {% include "dashboard/top_nav.html" %}
+        {% endblock top_nav %}
+
+        <!-- ### $App Screen Content ### -->
+        {% block content %}
+          <!-- {{ content }} -->
+        {% endblock content %}
+
+        <!-- ### $App Screen Footer ### -->
+        {% block footer %}
+          {% include "dashboard/footer.html" %}
+        {% endblock footer %}
+      </div>
+    </div>
+
+    {% block javascripts %}
+    <script type="text/javascript" src="/static/vendor.js"></script>
+    <script type="text/javascript" src="/static/bundle.js"></script>
+    {% endblock %}
+
+  </body>
+</html>

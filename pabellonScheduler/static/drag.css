@@ -1,0 +1,23 @@
+
+/* make drag container visible */
+#redips-drag {
+	/*display: table;*/
+}
+
+/* table */
+div#redips-drag table {
+
+}
+
+/* table cells */
+div#redips-drag td {
+	text-align: center;
+}
+
+/* drag object (DIV inside table cell) */
+.redips-drag {
+	text-align: center;
+	border: 2px solid SteelBlue;
+	background-color: white;
+	padding: 5px;
+}

@@ -1,0 +1,107 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %} Programación {% endblock title %}
+
+{% block stylesheets %}
+{{ block.super}}
+<link href="/static/drag.css" rel="stylesheet">
+{% endblock %}
+
+{% block content %}
+<main class="main-content bgc-grey-100">
+  <div id="mainContent">
+    <div class="row gap-20 masonry pos-r">
+      <div class="masonry-sizer col-md-6"></div>
+      <div class="masonry-item w-100">
+        <div class="row gap-20">
+          <!-- #Toatl Visits ==================== -->
+          <div class="col-md-12">
+            <div class="bgc-white p-20 bd">
+              <h6 class="c-grey-900">Programación</h6>
+              <div id="redips-drag" class="mT-30">
+              <table class="table table-striped">
+                <thead class="thead-dark">
+                  <tr>
+                    <th scope="col" class="redips-only">salas \ dias</th>
+                    {% for d in days %}
+                      <th scope="col" class="redips-only">{{d.day}}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for r in rooms %}
+                    <tr class="table-primary">
+                      <td class="redips-only">Sala {{r.room}} AM</td>
+                    {% for d in days %}
+                      <td>
+                      {% for s in schedule %}
+                        {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' %}
+                          <div class="font-weight-bold">{{ s.especialidad }} <br>
+                            Utilización: {{s.utilization}}%<br>
+                            Tiempo restante: {{s.remaining_duration}} min</div>
+                          {% for i in s.ingreso_set.all %}
+                            <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
+                              TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
+                          {% endfor %}
+                        {% endif %}
+                      {% endfor %}
+                      </td>
+                    {% endfor %}
+                    </tr>
+                    <tr class="table-success">
+                      <td class="redips-only">Sala {{r.room}} PM</td>
+                    {% for d in days %}
+                      <td>
+                      {% for s in schedule %}
+                        {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' %}
+                        <div class="font-weight-bold">{{ s.especialidad }} <br>
+                            Utilización: {{s.utilization}}%<br>
+                            Tiempo restante: {{s.remaining_duration}} min</div>
+                          {% for i in s.ingreso_set.all %}
+                            <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
+                              TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
+                          {% endfor %}
+                        {% endif %}
+                      {% endfor %}
+                      </td>
+                    {% endfor %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+              </div>
+              <br>
+              <div class="row">
+                <div class="col-md-6">
+                  <h6 class="c-grey-900">Estadísticas</h6>
+                  <table class="table">
+                    <tr>
+                      <th>Métrica</th>
+                      <th>Inicial</th>
+                      <th>Final</th>
+                    </tr>
+                    <tr>
+                      <td>Media (días)</td>
+                      <td>{{initial_mean.average|floatformat}}</td>
+                      <td>{{final_mean.average|floatformat}}</td>
+                    </tr>
+                    <tr>
+                      <td>Mediana (días)</td>
+                      <td>{{initial_median}}</td>
+                      <td>{{final_median}}</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+{% endblock content %}
+
+{% block javascripts %}
+  {{ block.super }}
+{% endblock %}
