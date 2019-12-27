@@ -6,3 +6,4 @@ mysqlclient==1.4.1
 django_pandas==0.6.0
 xlrd==1.2.0
 PulP==1.6.10
+xlwt==1.3.0
