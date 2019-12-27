@@ -2,16 +2,17 @@ from django.db import models
 
 # Create your models here.
 
-class FileUpload(models.Model):
+class FileUpload(models.Model): #el excel que se sube
     created = models.DateTimeField(auto_now_add=True)
     file = models.FileField(upload_to='uploads/')
     date = models.DateField(null=True)
     ndays = models.IntegerField(null=True)
+    ndaysAM = models.IntegerField(null=True)
     nrooms = models.IntegerField(null=True)
     hoursam = models.IntegerField(null=True)
     hourspm = models.IntegerField(null=True)
 
-class Schedule(models.Model):
+class Schedule(models.Model): #bloque
     especialidad = models.CharField(null=True, max_length=100)
     day = models.CharField(null=True, max_length=15)
     bloque = models.CharField(null=True, max_length=15)
@@ -20,7 +21,7 @@ class Schedule(models.Model):
     remaining_duration = models.IntegerField(null=True)
     file = models.ForeignKey(FileUpload, on_delete=models.CASCADE)
 
-class Ingreso(models.Model):
+class Ingreso(models.Model): # cada entrada/persona que espera intervencion, del archivo que se sube
     run = models.CharField(null=True, max_length=15)
     id_intervencion = models.CharField(null=True, max_length=100)
     prestacion = models.CharField(null=True, max_length=15)

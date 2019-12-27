@@ -18,83 +18,93 @@
             <div class="bgc-white p-20 bd">
               <h6 class="c-grey-900">Programación de pacientes</h6>
               <div class="text-center">
-              {% for e in especialidades %}
+                {% for e in especialidades %}
                 {% if e.especialidad == especialidad %}
-                  <a href="/programacion/{{id_result}}/pacientes/{{e.especialidad}}" class="btn btn-danger">{{e.especialidad}}</a>
+                <a href="/programacion/{{id_result}}/pacientes/{{e.especialidad}}" class="btn btn-danger">{{e.especialidad}}</a>
                 {% else %}
-                  <a href="/programacion/{{id_result}}/pacientes/{{e.especialidad}}" class="btn btn-info">{{e.especialidad}}</a>
+                <a href="/programacion/{{id_result}}/pacientes/{{e.especialidad}}" class="btn btn-info">{{e.especialidad}}</a>
                 {% endif %}
-              {% endfor %}
+                {% endfor %}
               </div>
               <div id="redips-drag" class="mT-30">
-              <div class="row">
-                <div class="col-md-6">
-                  <input class="form-control" type="text" id="searchInput" onkeyup="search()" placeholder="Buscar paciente">
-                  <br>
-                  <table id="pacientes" class="table table-striped">
-                    <thead class="thead-dark">
+                <div class="row">
+                  <div class="col-md-8">
+                    Tiempo para {{especialidad}}: {{tiempo_especialidad}} min<br>
+                    Máximo Tiempo restante: <span id="tiempo_restante">{{tiempo_restante}}</span> min
+                  </div>
+                  <div class="col-md-6">
+                    <br>
+                    <table id="tiempos_especialidades" class="table">
+                      <thead class="thead-dark">
                       <tr>
-                        <th scope="col" class="redips-only">Lista de espera de {{especialidad}}</th>
+                        <th scope="col" class="redips-only">Pacientes prioritarios de {{especialidad}}</th>
                       </tr>
-                    </thead>
-                    <tbody>
-                    {% for i in ingresos %}
-                      <tr class="table-primary">
-                        <td>
-                            <div class="redips-drag" id="{{i.id}}">Rut:{{i.run}} - Op:{{i.prestacion}} -
-                                  TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
-                        </td>
-                      </tr>
-                    {% endfor %}
-                    </tbody>
-                  </table>
-                </div>
-                <div class="col-md-6">
-                  <form method="post" action="/programacion/{{id_result}}/lista">
-                    {% csrf_token %}
-                    <div class="row">
-                      <div class="col-md-8">
-                        Tiempo para {{especialidad}}: {{tiempo_especialidad}} min<br>
-                        Tiempo restante: <span id="tiempo_restante">{{tiempo_restante}}</span> min
-                      </div>
-                      <div class="col-md-4">
-                        <button type="submit" class="btn btn-primary">Asignar Lista de Espera</button>
-                      </div>
-                    </div>
-                  </form>
-                  <br>
-                  <table id="tiempos_especialidades" class="table">
-                    <thead class="thead-dark">
-                      <tr>
-                        <th>Pacientes prioritarios de {{especialidad}}</th>
-                      </tr>
-                    </thead>
-                    <tbody>
+                      </thead>
+                      <tbody>
                       <tr class="table-success">
                         <td>
                           {% for i in ingresos_prioritarios %}
-                            <div class="redips-drag" id="{{i.id}}">Rut:{{i.run}} - Op:{{i.prestacion}} -
-                                  TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
+                          <div class="redips-drag" id="{{i.id}}">Rut:{{i.run}} - Op:{{i.prestacion}} -
+                            TE:{{i.tiempoespera}} días - D:{{i.duracion}} min  </div>
                           {% endfor %}
                         </td>
                       </tr>
-                    </tbody>
-                  </table>
+                      </tbody>
+                    </table>
+                    <div class="row">
+                      <form method="post" action="/programacion/{{id_result}}/lista">
+                        {% csrf_token %}
+
+
+                        <div class="col-md-4">
+                          <button style="width:220px;height:40px; type="submit" class="btn btn-primary">Asignar Bloques a Pacientes </button>
+                        </div>
+                      </form>
+
+                      <form method="get" action="/export_xls/{{id_result}}">
+                        <div class="col-md-4">
+                          <button style="width:250px;height:40px; type="submit" class="btn btn-primary">Exportar Lista de Pacientes (Excel)</button>
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+
+                  <div class="col-md-6">
+                    <input class="form-control" type="text" id="searchInput" onkeyup="search()" placeholder="Buscar paciente">
+                    <br>
+                    <table id="pacientes" class="table table-striped">
+                      <thead class="thead-dark">
+                      <tr>
+                        <th scope="col" class="redips-only">Lista de espera de {{especialidad}}</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr class="table-primary">
+                        <td>
+                          {% for i in ingresos %}
+                          <div class="redips-drag" id="{{i.id}}">Rut:{{i.run}} - Op:{{i.prestacion}} -
+                            TE:{{i.tiempoespera}} días - D:{{i.duracion}} min  </div>
+                          {% endfor %}
+                        </td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
-              </div>
             </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 </main>
 {% endblock content %}
 
 {% block javascripts %}
-  {{ block.super }}
-  <script type="text/javascript" src="/static/redips-drag-min.js"></script>
-  <script >
+{{ block.super }}
+<script type="text/javascript" src="/static/redips-drag-min.js"></script>
+<script >
+
     window.onload = function() {
       rd = REDIPS.drag;
       rd.init();
@@ -120,9 +130,9 @@
             if(pos1[0]!==pos2[0]){
                 console.log(elem);
                 if(pos2[0]===1){
-                  updatePrioridad(elem.id, 'in');
-                } else {
                   updatePrioridad(elem.id, 'out');
+                } else {
+                  updatePrioridad(elem.id, 'in');
                 }
                 pos1 = null;
                 pos2 = null;
@@ -144,6 +154,8 @@
           'mode': mode,
         });
 
+
+
         http.open('POST', url, true);
         http.setRequestHeader('X-CSRFToken','{{ csrf_token }}');
         http.setRequestHeader("Content-type", "application/json");
@@ -160,7 +172,9 @@
 
         http.send(data);
       }
+
     };
+
 
     function search() {
         // Declare variables

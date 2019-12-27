@@ -3,10 +3,16 @@ import numpy as np
 from datetime import timedelta
 import time
 import re
+from unicodedata import normalize
 import pickle
 import pulp as plp
 import math
 from .models import Schedule
+from itertools import cycle
+
+
+# aca va todas las cosas que hicimos en los notebook traducidas a .py
+# funciones que se usen en views.py
 
 def process_data(file, programming_date):
 
@@ -32,6 +38,8 @@ def process_data(file, programming_date):
     # parse variables
     Datos['F_ENTRADA'] = pd.to_datetime(Datos['F_ENTRADA'], format='%d-%m-%Y').dt.date
     Datos['RUN'] = Datos['RUN'].astype(str)
+    Datos['RUN'] = Datos['RUN'].apply(digito_verificador)
+    Datos['PRESTA_EST'] = Datos['PRESTA_EST'].apply(normalizar_texto)
     Datos = Datos.dropna()
 
     ## crear identidad
@@ -70,7 +78,7 @@ def process_data(file, programming_date):
     return Datos, missingColumns
 
 
-def run_model(queue, programming_date, file):
+def run_model(queue, programming_date, file):  # Este es el que corre para
 
     file_name = 'parameters/Extracted Parameters'
     with open(file_name, 'rb') as file_object:
@@ -91,13 +99,16 @@ def run_model(queue, programming_date, file):
     print('Average waiting time: ' + str(np.mean(freq)))
     print('Median waiting time: ' + str(np.median(freq)))
 
-    specialties = queue['Service'].unique()
+    specialties = queue['Service'].apply(normalizar_texto).unique()
     S = len(specialties)
 
     operations = parameters.index
 
-    T = int(file.ndays)  # [integer] number of days for the planning horizon
+    T = max(int(file.ndays),int(file.ndaysAM)) # [integer] number of days for the planning horizon
+    T_manana = int(file.ndaysAM) - min(int(file.ndays),int(file.ndaysAM))
+    T_tarde = int(file.ndays) - min(int(file.ndays),int(file.ndaysAM))
     R = int(file.nrooms)
+
 
     weekdays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
     starting_date = programming_date
@@ -105,8 +116,8 @@ def run_model(queue, programming_date, file):
 
     estimator = 'MAIN_DURATION'  # Estimation according to the main operation. Yet the only relevant to use.
 
-    times = range(1, T + 1)
-    rooms = range(1, R + 1)
+    times = range(1, T + 1)     # indice correspondiente a los dias
+    rooms = range(1, R + 1)     # indice correspondiente a las salas
 
     queues = dict()
     for s in specialties:
@@ -161,16 +172,16 @@ def run_model(queue, programming_date, file):
         else:
             return 0
 
-    u = 15
+    u = 15              # tiempo de limpieza
 
     # Regular day
     q_AM = int(file.hoursam)
     q_PM = int(file.hourspm)
-    q = q_AM + q_PM
+    q = q_AM + q_PM     # Horas de trabajo por día
 
-    # Friday
-    q_PMF = 2
-    q_F = q_AM + q_PMF
+    # Friday            
+    q_PMF = 2           # El viernes trabajan 2 horas en la tarde en vez de 3. Supongo que son menos
+    q_F = q_AM + q_PMF  # Horas de trabajo dia viernes
 
     def q_PM_(t):
 
@@ -182,24 +193,42 @@ def run_model(queue, programming_date, file):
     requiredTime = {}
 
     for specialty in specialties:
-        subtable = queue[queue['Service'] == specialty]
-        subtable['Duration'] = subtable.index
+        subtable = queue[queue['Service'] == specialty]         # escoje la tabla donde el servicio corresponde a la especialidad
+        subtable['Duration'] = subtable.index                   
         subtable['Duration'] = subtable['Duration'].apply(duration)
-        requiredTime[specialty] = np.sum(subtable['Duration'])
+        requiredTime[specialty] = np.sum(subtable['Duration'])  # tiempo requerido por especialidad es la suma de las duraciones de las operaciones por especialidad
 
     totalRequiredTime = 0
 
     for specialty in specialties:
-        totalRequiredTime += requiredTime[specialty]
+        totalRequiredTime += requiredTime[specialty]            # tiempo total es la suma de los tiempos requeridos en todas las especialidades
 
-    N_F = np.sum([isFriday(t) for t in times])
+    N_F = np.sum([isFriday(t) for t in times])                  # cantidad de viernes en el periodo de planeacion
 
-    H = R * q * T - (q_PM - q_PMF) * N_F
 
-    h = {s: H * requiredTime[s] / totalRequiredTime for s in specialties}
+    pabellon_disponible_AM = {}
+    pabellon_disponible_PM = {}
 
-    l = list(h.items())
-    l = sorted(l, key=lambda z: z[1])
+    for t in times:
+        pabellon_disponible_AM[t] = 1
+        pabellon_disponible_PM[t] = 1
+        if T_manana > 0:
+            pabellon_disponible_PM[t] = 0
+            T_manana -= 1
+        elif T_tarde > 0:
+            pabellon_disponible_AM[t] = 0
+            T_tarde -= 1
+
+    H = 0
+    for t in times:
+        H +=  R * (pabellon_disponible_AM[t] * q_AM + pabellon_disponible_PM[t] * q_PM_(t))
+
+
+    h = {s: H * requiredTime[s] / totalRequiredTime for s in specialties}       # Horas ofrecibles de acuerdo a proporciones de tiempos requeridos por especialidad
+
+    l = list(h.items())                         # transforma diccionario h en lista de tuplas (key,value)
+    l = sorted(l, key=lambda z: z[1])           # y la ordena respecto de value
+
 
     m = {}
     r = 0
@@ -219,11 +248,12 @@ def run_model(queue, programming_date, file):
 
     N = {}
 
+    # para cada especialidad y dia se ponen cotas a las variables de decision
     for s in specialties:
         for t in times:
-            N[s, t] = 2
+            N[s, t] = R         # todos los pabellones si quieren
             if h[s] == 0:
-                N[s, t] = 0
+                N[s, t] = 0     # si no se requiere tiempo de pabellon, se acota por cero
 
     b_AM = {(s, t): plp.LpVariable(cat='Integer', lowBound=0, upBound=N[s, t], name='b_AM_{0}_{1}'.format(s, t))
             for s in specialties for t in times}
@@ -235,22 +265,27 @@ def run_model(queue, programming_date, file):
         model.addConstraint(constraint)
         return constraint
 
-    def isGranularity(n):
+    def isGranularity(n):                   ### AQUI esto habra que cambiarlo de acuerdo a las horas por turno ingresadas por usuario?
 
-        alpha = n // 5
-        leftovers = n % 5
+        #alpha = n // 5
+        #leftovers = n % 5
+        alpha = n // q_AM
+        leftovers = n % q_AM
 
-        if leftovers % 3 == 0:
+        #if leftovers % 3 == 0:
+        if (leftovers % q_PM) == 0:
             return True
 
         else:
 
-            beta = n // 3
-            leftovers = n % 3
+            #beta = n // 3
+            #leftovers = n % 3
+            beta = n // q_PM
+            leftovers = n % q_PM
 
             if leftovers % 5 == 0:
+            #if (leftovers % q_AM) == 0:
                 return True
-
             else:
                 return False
 
@@ -280,6 +315,18 @@ def run_model(queue, programming_date, file):
             lower = 0
 
         return lower, upper
+
+    def pabellones_disponibles_AM(total_de_pabellones,t):
+        if pabellon_disponible_AM[t]:
+            return total_de_pabellones
+        else:
+            return 0
+
+    def pabellones_disponibles_PM(total_de_pabellones,t):
+        if pabellon_disponible_PM[t]:
+            return total_de_pabellones
+        else:
+            return 0
 
     lowerBounds = {}
     upperBounds = {}
@@ -311,15 +358,16 @@ def run_model(queue, programming_date, file):
 
     sumAMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_AM[s, t] for s in specialties),
                                                          sense=plp.LpConstraintEQ,
-                                                         rhs=R,
+                                                         rhs=pabellones_disponibles_AM(R,t),
                                                          name="SumAM_{0}".format(t)))
                    for t in times}
 
     sumPMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_PM[s, t] for s in specialties),
                                                          sense=plp.LpConstraintEQ,
-                                                         rhs=R,
+                                                         rhs=pabellones_disponibles_PM(R,t),
                                                          name="SumPM_{0}".format(t)))
                    for t in times}
+
 
     objective = plp.lpSum(w[s] * (q_AM * b_AM[s, t] + q_PM_(t) * b_PM[s, t]) for s in specialties for t in times)
 
@@ -359,7 +407,7 @@ def run_model(queue, programming_date, file):
             b = round(b_AM[s, t].varValue)
             while b > 0:
                 schedule.iat[i, j] = s
-                new_schedule = Schedule(especialidad=s, day=wday, room=j, bloque='AM',
+                new_schedule = Schedule(especialidad=s, day=wday, room=j+1, bloque='AM',
                                         file=file, initial_duration=(q_AM*60), remaining_duration=(q_AM*60))
                 new_schedule.save()
                 b -= 1
@@ -372,62 +420,110 @@ def run_model(queue, programming_date, file):
             b = round(b_PM[s, t].varValue)
             while b > 0:
                 schedule.iat[i, j] = s
-                new_schedule = Schedule(especialidad=s, day=wday, room=j, bloque='PM',
+                new_schedule = Schedule(especialidad=s, day=wday, room=j+1, bloque='PM',
                                         file=file, initial_duration=(q_PM_(t)*60), remaining_duration=(q_PM_(t)*60))
                 new_schedule.save()
                 b -= 1
                 j += 1
 
-        schedules[t] = schedule
+def ingresacion(file, schedule, lista, u):
 
+    for i in lista:
+
+        if i.duracion:
+            for s in schedule:
+
+                if (s.remaining_duration > i.duracion + u) and (s.especialidad == i.especialidad) \
+                        and (i.schedule.all().count() == 0):
+                    s.remaining_duration = s.remaining_duration - (i.duracion + u)
+                    s.save()
+                    i.schedule.add(s)
+
+                elif (s.initial_duration < i.duracion + u) and (s.remaining_duration < i.duracion + u) \
+                        and (s.especialidad == i.especialidad) and (s.bloque == 'AM') and  (i.schedule.all().count() == 0):
+
+                    schedule_pm = schedule.filter(especialidad=i.especialidad, bloque='PM', room=s.room, day=s.day).first()
+                    if schedule_pm and s.remaining_duration + schedule_pm.remaining_duration > i.duracion + u:
+                        time_remaining = i.duracion - (s.remaining_duration + u)
+                        s.remaining_duration = 0
+                        s.save()
+                        schedule_pm.remaining_duration = schedule_pm.remaining_duration - time_remaining
+                        i.schedule.add(s, schedule_pm)
+
+def ingresacion2(file, schedule, lista, u):
+
+    for i in lista:
+
+        if i.duracion:
+            for s in schedule:
+
+                if (s.remaining_duration > i.duracion + u) and (s.especialidad == i.especialidad) \
+                        and (i.schedule.all().count() == 0):
+                    s.remaining_duration = s.remaining_duration - (i.duracion + u)
+                    s.save()
+                    i.schedule.add(s)
+                    i.prioridad = 1
+                    i.save()
+
+                elif (s.initial_duration < i.duracion + u) and (s.remaining_duration < i.duracion + u) \
+                        and (s.especialidad == i.especialidad) and (s.bloque == 'AM') and  (i.schedule.all().count() == 0):
+
+                    schedule_pm = schedule.filter(especialidad=i.especialidad, bloque='PM', room=s.room, day=s.day).first()
+                    if schedule_pm and s.remaining_duration + schedule_pm.remaining_duration > i.duracion + u:
+                        time_remaining = i.duracion - (s.remaining_duration + u)
+                        s.remaining_duration = 0
+                        s.save()
+                        schedule_pm.remaining_duration = schedule_pm.remaining_duration - time_remaining
+                        i.schedule.add(s, schedule_pm)
+                        i.prioridad = 1
+                        i.save()
 def assign_list(file, schedule, ingresos, ingresos_prioritarios):
+
+    u = 15
 
     for s in schedule:
         s.ingreso_set.clear()
         s.remaining_duration = s.initial_duration
         s.save()
 
-    for i in ingresos_prioritarios:
+    ingresacion(file, schedule, ingresos_prioritarios, u)
+    #ingresacion(file, schedule, ingresos, u)
 
-        if i.duracion:
-            for s in schedule:
+def assign_list2(file, schedule, ingresos, ingresos_prioritarios):
 
-                if (s.remaining_duration > i.duracion + 15) and (s.especialidad == i.especialidad) \
-                        and (i.schedule.all().count() == 0):
-                    s.remaining_duration = s.remaining_duration - (i.duracion + 15)
-                    s.save()
-                    i.schedule.add(s)
+    u = 15
 
-                elif (s.initial_duration < i.duracion + 15) and (s.remaining_duration < i.duracion + 15) \
-                        and (s.especialidad == i.especialidad) and (s.bloque == 'AM') and  (i.schedule.all().count() == 0):
+    for s in schedule:
+        s.ingreso_set.clear()
+        s.remaining_duration = s.initial_duration
+        s.save()
+    ingresacion2(file, schedule, ingresos_prioritarios, u)
+    ingresacion2(file, schedule, ingresos, u)
 
-                    schedule_pm = schedule.filter(especialidad=i.especialidad, bloque='PM', room=s.room, day=s.day).first()
-                    if schedule_pm and s.remaining_duration + schedule_pm.remaining_duration > i.duracion + 15:
-                        time_remaining = i.duracion - (s.remaining_duration + 15)
-                        s.remaining_duration = 0
-                        s.save()
-                        schedule_pm.remaining_duration = schedule_pm.remaining_duration - time_remaining
-                        i.schedule.add(s, schedule_pm)
+def digito_verificador(rut):
+    if '-' in rut:
+        return rut
+    else:
+        reversed_digits = map(int, reversed(str(rut)))
+        factors = cycle(range(2, 8))
+        s = sum(d * f for d, f in zip(reversed_digits, factors))
+        verif = (-s) % 11
+        if verif == 10:
+            return rut + '-k'
+        else:
+            return rut + '-' + str(verif)
 
-    for i in ingresos:
+def normalizar_texto(s):
 
-        if i.duracion:
-            for s in schedule:
+    s0 = s.strip()
+    s1 = re.sub(
+        r"([^n\u0300-\u036f]|n(?!\u0303(?![\u0300-\u036f])))[\u0300-\u036f]+",
+        r"\1",
+        normalize("NFD", s0), 0, re.I
+    )
 
-                if (s.remaining_duration > i.duracion + 15) and (s.especialidad == i.especialidad) \
-                        and (i.schedule.all().count() == 0):
-                    s.remaining_duration = s.remaining_duration - (i.duracion + 15)
-                    s.save()
-                    i.schedule.add(s)
+    # -> NFC
+    s2 = normalize('NFC', s1)
+    s3 = s2.upper().replace(" ", "_")
 
-                elif (s.initial_duration < i.duracion + 15) and (s.remaining_duration < i.duracion + 15) \
-                        and (s.especialidad == i.especialidad) and (s.bloque == 'AM') and  (i.schedule.all().count() == 0):
-
-                    schedule_pm = schedule.filter(especialidad=i.especialidad, bloque='PM', room=s.room, day=s.day).first()
-                    if schedule_pm and s.remaining_duration + schedule_pm.remaining_duration > i.duracion + 15:
-                        time_remaining = i.duracion - (s.remaining_duration + 15)
-                        s.remaining_duration = 0
-                        s.save()
-                        schedule_pm.remaining_duration = schedule_pm.remaining_duration - time_remaining
-                        i.schedule.add(s, schedule_pm)
-
+    return s3

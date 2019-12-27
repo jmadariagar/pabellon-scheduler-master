@@ -25,7 +25,7 @@ SECRET_KEY = '=hcj8q$-&au3&yj4o+_m3i46^ivlb_*wkjdipzvld_+^l(k9&s'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['web', 'localhost']
+ALLOWED_HOSTS = ['web', 'localhost','127.0.0.1']
 
 
 # Application definition
@@ -75,18 +75,27 @@ WSGI_APPLICATION = 'pabellonScheduler.wsgi.application'
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 DATABASES = {
-    #'default': {
-    #    'ENGINE': 'django.db.backends.sqlite3',
-    #    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
-    #}
      'default': {
-         'ENGINE': 'django.db.backends.mysql',
-         'NAME': 'pabellonScheduler',
-         'USER': 'hlcmPabellonuser',
-         'PASSWORD': 'hlcmPabellonDBus3r',
-         'HOST': 'db_pabellon',
-         'PORT': 3306,
+         'ENGINE': 'django.db.backends.sqlite3',
+         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'), #por defecto
      }
+    #'default': {
+    #    'ENGINE': 'django.db.backends.mysql',
+    #    'NAME': 'pabellonScheduler',
+    #    'USER': 'hlcmPabellonuser',
+    #    'PASSWORD': 'hlcmPabellonDBus3r',
+    #    'HOST': 'db_pabellon',
+    #    'PORT': 3306,
+    #}
+    #'default': {
+    #    'ENGINE': 'django.db.backends.mysql',
+    #    'NAME': 'pabellonScheduler',
+    #    'USER': 'root',
+    #    'PASSWORD': '8231eb8',
+    #    'HOST': 'localhost',
+    #    'PORT': 3306,
+    #}
+
 }
 
 

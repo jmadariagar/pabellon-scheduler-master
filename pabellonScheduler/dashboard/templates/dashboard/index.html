@@ -22,11 +22,11 @@
                 <form action="{% url 'upload-file' %}" method="post" enctype="multipart/form-data">
                   {% csrf_token %}
                   {% if mensaje %}
-                    <div class="alert alert-danger" role="alert">
-                      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span>
-                      </button>
-                      <strong>Error:</strong> {{ mensaje }}
-                    </div>
+                  <div class="alert alert-danger" role="alert">
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span>
+                    </button>
+                    <strong>Error:</strong> {{ mensaje }}
+                  </div>
 
                   {% endif %}
                   <div class="form-group">
@@ -38,11 +38,15 @@
                   <h6 class="c-grey-900">Configuración del Programador</h6>
                   <div class="form-row">
                     <div class="form-group col-md-2">
-                      <label for="inputDias">Fecha Programación</label>
+                      <label for="inputDias">Fecha Inicio Programación</label>
                       <input id="date" name="date" type="text" class="form-control" value='{% now "d/m/Y" %}' autocomplete="off">
                     </div>
                     <div class="form-group col-md-2">
-                      <label for="inputDias">N° Días a trabajar</label>
+                      <label for="inputDias">N° Bloques AM</label>
+                      <input name="ndaysAM" type="text" class="form-control" id="inputDias" value="5">
+                    </div>
+                    <div class="form-group col-md-2">
+                      <label for="inputDias">N° Bloques PM</label>
                       <input name="ndays" type="text" class="form-control" id="inputDias" value="5">
                     </div>
                     <div class="form-group col-md-2">
@@ -58,55 +62,44 @@
                       <input name="hourspm" type="text" class="form-control" id="inputPM" value="3">
                     </div>
                   </div>
+
                   <!--<div class="form-group row">-->
-                    <!--<label for="inputEmail3" class="col-sm-2 col-form-label">Email</label>-->
-                    <!--<div class="col-sm-10">-->
-                      <!--<input type="email" class="form-control" id="inputEmail3" placeholder="Email">-->
-                    <!--</div>-->
+                  <!--<div class="col-sm-10 offset-sm-2 ">-->
+                  <!--Feriado?-->
+                  <!--</div>-->
                   <!--</div>-->
                   <!--<div class="form-group row">-->
-                    <!--<label for="inputPassword3" class="col-sm-2 col-form-label">Password</label>-->
-                    <!--<div class="col-sm-10">-->
-                      <!--<input type="password" class="form-control" id="inputPassword3" placeholder="Password">-->
-                    <!--</div>-->
+                  <!--<label for="inputLunes" class="col-sm-2 col-form-label">Lunes</label>-->
+                  <!--<div class="col-sm-1">-->
+                  <!--<input class="form-check-input" type="checkbox" id="inputLunes">-->
                   <!--</div>-->
-                  <!--<fieldset class="form-group">-->
-                    <!--<div class="row">-->
-                      <!--<legend class="col-form-label col-sm-2 pt-0">Radios</legend>-->
-                      <!--<div class="col-sm-10">-->
-                        <!--<div class="form-check">-->
-                          <!--<input class="form-check-input" type="radio" name="gridRadios" id="gridRadios1" value="option1" checked>-->
-                          <!--<label class="form-check-label" for="gridRadios1">-->
-                            <!--First radio-->
-                          <!--</label>-->
-                        <!--</div>-->
-                        <!--<div class="form-check">-->
-                          <!--<input class="form-check-input" type="radio" name="gridRadios" id="gridRadios2" value="option2">-->
-                          <!--<label class="form-check-label" for="gridRadios2">-->
-                            <!--Second radio-->
-                          <!--</label>-->
-                        <!--</div>-->
-                        <!--<div class="form-check disabled">-->
-                          <!--<input class="form-check-input" type="radio" name="gridRadios" id="gridRadios3" value="option3" disabled>-->
-                          <!--<label class="form-check-label" for="gridRadios3">-->
-                            <!--Third disabled radio-->
-                          <!--</label>-->
-                        <!--</div>-->
-                      <!--</div>-->
-                    <!--</div>-->
-                  <!--</fieldset>-->
+                  <!--</div>-->
                   <!--<div class="form-group row">-->
-                    <!--<div class="col-sm-2">Checkbox</div>-->
-                    <!--<div class="col-sm-10">-->
-                      <!--<div class="form-check">-->
-                        <!--<input class="form-check-input" type="checkbox" id="gridCheck1">-->
-                        <!--<label class="form-check-label" for="gridCheck1">-->
-                          <!--Example checkbox-->
-                        <!--</label>-->
-                      <!--</div>-->
-                    <!--</div>-->
+                  <!--<label for="inputMartes" class="col-sm-2 col-form-label">Martes</label>-->
+                  <!--<div class="col-sm-1">-->
+                  <!--<input class="form-check-input" type="checkbox" id="inputMartes">-->
                   <!--</div>-->
-                  <button type="submit" class="btn btn-primary">Hacer Programación</button>
+                  <!--</div>-->
+                  <!--<div class="form-group row">-->
+                  <!--<label for="inputMiercoles" class="col-sm-2 col-form-label">Miércoles</label>-->
+                  <!--<div class="col-sm-1">-->
+                  <!--<input class="form-check-input" type="checkbox" id="inputMiercoles">-->
+                  <!--</div>-->
+                  <!--</div>-->
+                  <!--<div class="form-group row">-->
+                  <!--<label for="inputJueves" class="col-sm-2 col-form-label">Jueves</label>-->
+                  <!--<div class="col-sm-1">-->
+                  <!--<input class="form-check-input" type="checkbox" id="inputJueves">-->
+                  <!--</div>-->
+                  <!--</div>-->
+                  <!--<div class="form-group row">-->
+                  <!--<label for="inputViernes" class="col-sm-2 col-form-label">Viernes</label>-->
+                  <!--<div class="col-sm-1">-->
+                  <!--<input class="form-check-input" type="checkbox" id="inputViernes">-->
+                  <!--</div>-->
+                  <!--</div>-->
+
+                  <button type="submit" class="btn btn-primary">Hacer Distribución de Bloques</button>
                 </form>
               </div>
             </div>
@@ -124,7 +117,7 @@
               <h6 class="c-grey-900">Programaciones anteriores</h6>
               <div class="mT-30">
                 {% for file in files %}
-                  <a href="programacion/{{file.pk}}">{{file.created}} - {{file.file}}</a><br><br>
+                <a href="programacion/{{file.pk}}">{{file.created}} - {{file.file}}</a><br><br>
                 {% endfor %}
               </div>
             </div>
@@ -138,11 +131,11 @@
 {% endblock content %}
 
 {% block javascripts %}
-  {{ block.super }}
-  <script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
-  <script>
+{{ block.super }}
+<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/js/bootstrap-datepicker.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
+<script>
     $('#date').datepicker({
         language: 'es',
         orientation: 'bottom'

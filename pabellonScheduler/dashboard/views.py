@@ -5,30 +5,38 @@ from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.utils.translation import ugettext_lazy as _
 
+# aca se importan las cosas desde los otros archivos .py (en la misma carpeta, con .)
 from .forms import FileUploadForm
 from .models import FileUpload, Ingreso, Schedule
-from .utils import process_data, run_model, assign_list
+from .utils import process_data, run_model, assign_list, assign_list2, normalizar_texto
 
 import time
 import math
 import json
 import datetime as dt
 
-class IndexView(View):
-    template = 'dashboard/index.html'
-    context = {}
+# exportar excel
+import xlwt
 
-    def get(self, request, *args, **kwargs):
-        self.context['files'] = FileUpload.objects.order_by('-created')[:10]
-        return render(request, self.template, self.context)
+
+# controla carga los templates para la vista de lo que esta en urls.py, y se conecta con los modelos
+
+class IndexView(View):  # url vacia
+    template = 'dashboard/index.html'  # template de pagina web
+    context = {}  # lo que se va a enviar al template
+
+    def get(self, request, *args, **kwargs):  # mostrar una pagina se hace con get; post para recibir input del usuario
+        self.context['files'] = FileUpload.objects.order_by('-created')[
+                                :5]  # trae todos los objetos del timpo FileUpload
+        # y los ordena por campo created (una fecha)
+        return render(request, self.template, self.context)  # manda a devolver la pagina con las cosas que se le ordena
 
 
 class ScheduleView(View):
-
     context = {}
     template = 'dashboard/results.html'
 
-    def get(self, request, id_result, *args, **kwargs):
+    def get(self, request, id_result, *args, **kwargs):  # para mostrar info al usuari
 
         try:
             file = FileUpload.objects.get(pk=id_result)
@@ -38,54 +46,60 @@ class ScheduleView(View):
         self.context['schedule'] = Schedule.objects.filter(file=file)
         self.context['rooms'] = Schedule.objects.filter(file=file).values('room').distinct().order_by('room')
         self.context['days'] = Schedule.objects.filter(file=file).values('day').distinct()
-        self.context['especialidades'] = Schedule.objects.filter(file=file).values('especialidad').\
-            annotate(time=Sum('initial_duration')).annotate(time_h=F('time')/60).order_by('-time')
+        self.context['especialidades'] = Schedule.objects.filter(file=file).values('especialidad'). \
+            annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by('-time')
         self.context['id_result'] = id_result
 
         return render(request, self.template, self.context)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):  # post es para recibir info del usuario
 
-        form = FileUploadForm(request.POST, request.FILES)
+        form = FileUploadForm(request.POST, request.FILES)  # formulario, definidos en form.py.
+        # Si hay un post, se usa un form
         if form.is_valid():
 
-            if int(request.META['CONTENT_LENGTH']) > 10485760:
+            if int(request.META['CONTENT_LENGTH']) > 10485760:  # si el tamaño es mayor a 10 megas
                 self.template = 'dashboard/index.html'
-                self.context['files'] = FileUpload.objects.order_by('-created')[:10]
+                self.context['files'] = FileUpload.objects.order_by('-created')
                 self.context['mensaje'] = "El archivo a subir debe ser menor a 10 MB"
                 return render(request, self.template, self.context)
 
             programming_date = dt.datetime.strptime(request.POST['date'], "%d/%m/%Y").date()
 
+            # request es el objetoi que contiene todas las cosas que vienen del request del usuario (cuando ejecuta la accion)
+            # variables definidas en el html
             new_file = FileUpload(file=request.FILES['file'], date=programming_date, nrooms=request.POST['nrooms'],
-                                  ndays=request.POST['ndays'], hoursam=request.POST['hoursam'],
+                                  ndays=request.POST['ndays'],
+                                  ndaysAM=request.POST['ndaysAM'],
+                                  hoursam=request.POST['hoursam'],
                                   hourspm=request.POST['hourspm'])
 
             start_time = time.time()
-            Datos, missingColumns = process_data(new_file.file, programming_date)
+            Datos, missingColumns = process_data(new_file.file, programming_date)  # funcion definida en utils.py.
 
             if missingColumns:
                 self.template = 'dashboard/index.html'
                 self.context['files'] = FileUpload.objects.order_by('-created')
-                self.context['mensaje'] = "Archivo sin las columnas " + ", ".join(missingColumns)
+                self.context['mensaje'] = "Archivo sin las columnas " + ", ".join(
+                    missingColumns)  # 'mensaje' tiene que estar en index.html
                 return render(request, self.template, self.context)
 
             print(time.time() - start_time, 's')
-            new_file.save()
+            new_file.save()  # esto es lo que crea las filas en la base de datos de sqlite
 
             save_lista_espera(Datos, new_file)
 
-            run_model(Datos, programming_date, new_file)
+            run_model(Datos, programming_date, new_file)  # del utils
 
-            return redirect('/programacion/' + str(new_file.pk))
+            return redirect('/programacion/' + str(new_file.pk))  # redirige a la pagina de programacion
         else:
             self.template = 'dashboard/index.html'
-            self.context['files'] = FileUpload.objects.order_by('-created')
+            self.context['files'] = FileUpload.objects.order_by('-created')[:10]
             self.context['mensaje'] = "Error al subir el archivo"
             return render(request, self.template, self.context)
 
-class ListaView(View):
 
+class ListaView(View):
     context = {}
     template = 'dashboard/lista.html'
 
@@ -96,7 +110,8 @@ class ListaView(View):
             template = 'dashboard/index.html'
             return render(request, template, self.context)
 
-        schedule = Schedule.objects.filter(file=file).annotate(utilization=(F('initial_duration') - F('remaining_duration'))
+        schedule = Schedule.objects.filter(file=file).annotate(
+            utilization=(F('initial_duration') - F('remaining_duration'))
                         * 100 / F('initial_duration'))
 
         self.context['schedule'] = schedule
@@ -107,7 +122,8 @@ class ListaView(View):
         ingreso = Ingreso.objects.filter(file=file)
         self.context['initial_mean'] = ingreso.aggregate(average=Avg('tiempoespera'))
         self.context['initial_median'] = median_value(ingreso, 'tiempoespera')
-        ingreso_final = Ingreso.objects.filter(file=file).annotate(schedule_count=Count('schedule')).filter(schedule_count=0)
+        ingreso_final = Ingreso.objects.filter(file=file).annotate(schedule_count=Count('schedule')).filter(
+            schedule_count=0)
         self.context['final_mean'] = ingreso_final.aggregate(average=Avg('tiempoespera'))
         self.context['final_median'] = median_value(ingreso_final, 'tiempoespera')
 
@@ -127,7 +143,8 @@ class ListaView(View):
 
         assign_list(file, schedule, ingresos, ingresos_prioritarios)
 
-        schedule = Schedule.objects.filter(file=file).annotate(utilization=(F('initial_duration') - F('remaining_duration'))
+        schedule = Schedule.objects.filter(file=file).annotate(
+            utilization=(F('initial_duration') - F('remaining_duration'))
                         * 100 / F('initial_duration'))
 
         self.context['schedule'] = schedule
@@ -138,14 +155,15 @@ class ListaView(View):
         ingreso = Ingreso.objects.filter(file=file)
         self.context['initial_mean'] = ingreso.aggregate(average=Avg('tiempoespera'))
         self.context['initial_median'] = median_value(ingreso, 'tiempoespera')
-        ingreso_final = Ingreso.objects.filter(file=file).annotate(schedule_count=Count('schedule')).filter(schedule_count=0)
+        ingreso_final = Ingreso.objects.filter(file=file).annotate(schedule_count=Count('schedule')).filter(
+            schedule_count=0)
         self.context['final_mean'] = ingreso_final.aggregate(average=Avg('tiempoespera'))
         self.context['final_median'] = median_value(ingreso_final, 'tiempoespera')
 
         return render(request, self.template, self.context)
 
-class PacientesView(View):
 
+class PacientesView(View):
     context = {}
     template = 'dashboard/pacientes.html'
 
@@ -163,7 +181,7 @@ class PacientesView(View):
             return render(request, template, self.context)
 
         especialidades = Schedule.objects.filter(file=file).values('especialidad'). \
-                              annotate(time=Sum('initial_duration')).order_by('-time')
+            annotate(time=Sum('initial_duration')).order_by('-time')
 
         if not especialidad:
             especialidad = especialidades.first()['especialidad']
@@ -181,7 +199,7 @@ class PacientesView(View):
                 break
 
         if ingresos_duracion['time'] and ingresos_duracion['count']:
-            tiempo_restante = tiempo_especialidad - (ingresos_duracion['time'] + 15*ingresos_duracion['count'])
+            tiempo_restante = tiempo_especialidad - (ingresos_duracion['time'] + 15 * ingresos_duracion['count'])
         else:
             tiempo_restante = tiempo_especialidad
 
@@ -208,8 +226,78 @@ class PacientesView(View):
         return render(request, self.template, self.context)
 
 
-def updateSchedule(request):
+class PacientesViewFirstTime(View):
+    context = {}
+    template = 'dashboard/pacientes.html'
 
+    def get(self, request, id_result, *args, **kwargs):
+
+        # checkear si viene chat id en la url
+        especialidad = None
+        if 'especialidad' in kwargs:
+            especialidad = kwargs['especialidad']
+
+        try:
+            file = FileUpload.objects.get(pk=id_result)
+        except:
+            template = 'dashboard/index.html'
+            return render(request, template, self.context)
+
+        especialidades = Schedule.objects.filter(file=file).values('especialidad'). \
+            annotate(time=Sum('initial_duration')).order_by('-time')
+
+        if not especialidad:
+            especialidad = especialidades.first()['especialidad']
+
+        if True:  # itera las lista prioritaria para tooodas las especialidades
+            schedule = Schedule.objects.filter(file=file)
+            for e in especialidades:
+                ingresoss = Ingreso.objects.filter(file=file, especialidad=e['especialidad']).order_by(
+                    '-tiempoespera')
+                ingresoss = ingresoss.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
+                ingresoss_prioritarios = Ingreso.objects.filter(file=file, especialidad=e['especialidad'],
+                                                                prioridad=1).order_by(
+                    '-tiempoespera')
+                assign_list2(file, schedule, ingresoss, ingresoss_prioritarios)
+
+        schedule = Schedule.objects.filter(file=file)
+        ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion') \
+            .aggregate(time=Sum('duracion'), count=Count('duracion'))
+
+        ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad).order_by(
+            '-tiempoespera')
+        ingresos = ingresos.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
+
+        tiempo_especialidad = 0
+        for e in especialidades:
+            if e['especialidad'] == especialidad:
+                tiempo_especialidad = e['time']
+                break
+
+        ingresos_prioritarios = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).order_by(
+            '-tiempoespera')
+        ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=0).order_by(
+            '-tiempoespera')
+
+        assign_list2(file, schedule, ingresos, ingresos_prioritarios)
+
+        ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion') \
+            .aggregate(time=Sum('duracion'), count=Count('duracion'))
+
+        tiempo_restante = tiempo_especialidad - (ingresos_duracion['time'] + 15 * ingresos_duracion['count'])
+
+        self.context['tiempo_especialidad'] = tiempo_especialidad
+        self.context['tiempo_restante'] = tiempo_restante
+        self.context['especialidades'] = especialidades
+        self.context['especialidad'] = especialidad
+        self.context['ingresos'] = ingresos
+        self.context['ingresos_prioritarios'] = ingresos_prioritarios
+        self.context['id_result'] = id_result
+
+        return render(request, self.template, self.context)
+
+
+def updateSchedule(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -235,11 +323,13 @@ def updateSchedule(request):
                 schedule2.update(room=room1, day=day1, bloque=bloque1, initial_duration=s1duration,
                                  remaining_duration=s1duration)
             if id_initial:
-                Schedule.objects.filter(pk = id_initial).update(room=room2, day=day2, bloque=bloque2,
-                                                                initial_duration=s2duration, remaining_duration=s2duration)
+                Schedule.objects.filter(pk=id_initial).update(room=room2, day=day2, bloque=bloque2,
+                                                              initial_duration=s2duration,
+                                                              remaining_duration=s2duration)
 
             especialidades = list(Schedule.objects.filter(file=file).values('especialidad'). \
-                annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by('-time'))
+                                  annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by(
+                '-time'))
 
         except:
             return HttpResponse(_('Not found or cannot update!'))
@@ -248,8 +338,8 @@ def updateSchedule(request):
 
     return HttpResponse(_('No post!'))
 
-def updatePrioridad(request):
 
+def updatePrioridad(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
@@ -273,7 +363,8 @@ def updatePrioridad(request):
                 ingreso.prioridad = 0
             ingreso.save()
 
-            ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion')\
+            ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values(
+                'duracion') \
                 .aggregate(time=Sum('duracion'), count=Count('duracion'))
 
             if ingresos_duracion['time'] and ingresos_duracion['count']:
@@ -288,7 +379,8 @@ def updatePrioridad(request):
 
     return HttpResponse(_('No post!'))
 
-@transaction.atomic
+
+@transaction.atomic  # operacion atomica: que se ejecute todo_ en el mismo momento
 def save_lista_espera(content, file):
     for index, item in content.iterrows():
 
@@ -306,10 +398,77 @@ def save_lista_espera(content, file):
                             file=file)
         operacion.save()
 
+
 def median_value(queryset, term):
     count = queryset.count()
     values = queryset.values_list(term, flat=True).order_by(term)
     if count % 2 == 1:
-        return values[(count//2)]
+        return values[(count // 2)]
     else:
-        return sum(values[count//2-1:count//2+1])/2
+        return sum(values[count // 2 - 1:count // 2 + 1]) / 2
+
+
+def export_xls(request, id_result):
+    if request.method == 'GET':
+        try:
+            #id_result = request.GET.get('id_result', None)
+            file = FileUpload.objects.get(pk=id_result)
+        except:
+            return HttpResponse(_('Invalid request!'))
+        try:
+            response = HttpResponse(content_type='application/ms-excel')
+            response['Content-Disposition'] = 'attachment; filename="Lista_de_Pacientes.xls"'
+
+            especialidades = Schedule.objects.filter(file=file).values('especialidad').distinct()
+
+            wb = xlwt.Workbook(encoding='utf-8')
+
+            for e in especialidades:
+                titulo = e['especialidad']
+                ws = wb.add_sheet(titulo)
+
+                # Sheet header, first row
+
+                row_num = 0
+
+                font_style = xlwt.XFStyle()
+                font_style.font.bold = True
+
+                columns = ['RUN_prior', 'OPERACION_prior', 'TIEMPO_ESPERADO_prior', 'DURACION_prior',
+                           '', '', 'RUN', 'OPERACION', 'TIEMPO_ESPERADO', 'DURACION', ]
+
+                for col_num in range(len(columns)):
+                    ws.write(row_num, col_num, columns[col_num], font_style)
+
+                # Sheet body, remaining rows
+                font_style = xlwt.XFStyle()
+
+                rows_prior = Ingreso.objects.filter(file=file,
+                                                    especialidad=e['especialidad'],
+                                                    prioridad=1).values_list('run',
+                                                                             'prestacion',
+                                                                             'tiempoespera',
+                                                                             'duracion').order_by('-tiempoespera')
+                for row in rows_prior:
+                    row_num += 1
+                    for col_num in range(4):
+                        ws.write(row_num, col_num, row[col_num], font_style)
+
+                rows_no_prior = Ingreso.objects.filter(file=file,
+                                                       especialidad=e['especialidad'],
+                                                       prioridad=0).values_list('run',
+                                                                                'prestacion',
+                                                                                'tiempoespera',
+                                                                                'duracion').order_by('-tiempoespera')
+                row_num = 0
+                for row in rows_no_prior:
+                    row_num += 1
+                    for col_num in range(4):
+                        ws.write(row_num, col_num + 6, row[col_num], font_style)
+            wb.save(response)
+
+        except:
+            return HttpResponse(_('Not found or cannot update!'))
+        return response
+
+    return HttpResponse(_('No post!'))

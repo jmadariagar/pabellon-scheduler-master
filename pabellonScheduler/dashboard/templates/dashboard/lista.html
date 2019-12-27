@@ -17,7 +17,7 @@
           <!-- #Toatl Visits ==================== -->
           <div class="col-md-12">
             <div class="bgc-white p-20 bd">
-              <h6 class="c-grey-900">Programación</h6>
+              <h6 class="c-grey-900">Distribución de Pacientes por Bloques</h6>
               <div id="redips-drag" class="mT-30">
               <table class="table table-striped">
                 <thead class="thead-dark">
@@ -36,7 +36,7 @@
                       <td>
                       {% for s in schedule %}
                         {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' %}
-                          <div class="font-weight-bold">{{ s.especialidad }} <br>
+                          <div class="font-weight-bold">{{ s.especialidad}} <br>
                             Utilización: {{s.utilization}}%<br>
                             Tiempo restante: {{s.remaining_duration}} min</div>
                           {% for i in s.ingreso_set.all %}

@@ -17,7 +17,7 @@
           <!-- #Toatl Visits ==================== -->
           <div class="col-md-12">
             <div class="bgc-white p-20 bd">
-              <h6 class="c-grey-900">Programación</h6>
+              <h6 class="c-grey-900">Distribución de Bloques</h6>
               <div id="redips-drag" class="mT-30">
               <table class="table table-striped">
                 <thead class="thead-dark">
@@ -61,7 +61,7 @@
               <br>
               <div class="row">
                 <div class="col-md-6">
-                <h6 class="c-grey-900">Tiempos para Especialidades</h6>
+                <h6 class="c-grey-900">Tiempos asignado por Especialidades</h6>
                 <table id="tiempos_especialidades" class="table">
                   <tr>
                     <th>Especialidad</th>
@@ -75,11 +75,12 @@
                   {% endfor %}
                 </table>
                 </div>
+
+              <a  href="/programacion/{{id_result}}/pacientes" class="btn btn-primary" style="width:220px;height:40px;">Ordenar Lista de Pacientes</a>
               </div>
-              <a href="/programacion/{{id_result}}/pacientes" class="btn btn-primary">Asignar Lista de Espera</a>
+                <br>
               <br>
-              <br>
-              <a class="btn btn-primary" href="/programacion/{{id_result}}/lista">Ver Asignación Lista de Espera Previa</a>
+              <!--<a class="btn btn-primary" href="/programacion/{{id_result}}/lista">Ver Asignación Lista de Espera Previa</a>-->
             </div>
           </div>
         </div>
