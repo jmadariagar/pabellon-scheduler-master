@@ -19,6 +19,7 @@ class Schedule(models.Model): #bloque
     room = models.IntegerField(null=True)
     initial_duration = models.IntegerField(null=True)
     remaining_duration = models.IntegerField(null=True)
+    bloque_extendido = models.IntegerField(null=True, default=0)
     file = models.ForeignKey(FileUpload, on_delete=models.CASCADE)
 
 class Ingreso(models.Model): # cada entrada/persona que espera intervencion, del archivo que se sube

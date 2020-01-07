@@ -41,12 +41,17 @@
                       </tr>
                       </thead>
                       <tbody>
+                      {% for i in ingresos_prioritarios %}
                       <tr class="table-success">
                         <td>
-                          {% for i in ingresos_prioritarios %}
+
                           <div class="redips-drag" id="{{i.id}}">Rut:{{i.run}} - Op:{{i.prestacion}} -
                             TE:{{i.tiempoespera}} días - D:{{i.duracion}} min  </div>
-                          {% endfor %}
+                        </td>
+                      </tr>
+                      {% endfor %}
+                      <tr class="table-success">
+                        <td>
                         </td>
                       </tr>
                       </tbody>
@@ -79,16 +84,24 @@
                       </tr>
                       </thead>
                       <tbody>
+                      {% for i in ingresos %}
                       <tr class="table-primary">
                         <td>
-                          {% for i in ingresos %}
+
                           <div class="redips-drag" id="{{i.id}}">Rut:{{i.run}} - Op:{{i.prestacion}} -
                             TE:{{i.tiempoespera}} días - D:{{i.duracion}} min  </div>
-                          {% endfor %}
+
+                        </td>
+                      </tr>
+                      {% endfor %}
+                      <tr class="table-primary">
+                        <td>
                         </td>
                       </tr>
                       </tbody>
                     </table>
+                  </div>
+                  <div style="display:none" id="boolean">'0'
                   </div>
                 </div>
               </div>
@@ -112,33 +125,70 @@
       var pos1 = null;
       var pos2 = null;
       var elem = null;
+      var time = null;
 
       rd.event.clicked = function () {
         // get current position (method returns positions as array)
         pos1 = rd.getPosition();
-        elem =
         // display current row and current cell
         console.log('clicked: ' + pos1[0] + ' ' + pos1[1] + ' ' + pos1[2]);
       };
 
       rd.event.dropped = function (targetCell) {
+
         pos2 = rd.getPosition();
+        pos_nueva = rd.getPosition();
         elem = rd.obj;
         console.log('dropped: ' + pos2[0] + ' ' + pos2[1] + ' ' + pos2[2]);
 
         if(pos1 && pos2 && elem){
-            if(pos1[0]!==pos2[0]){
+            if(pos1[0]!==pos2[0] ){
                 console.log(elem);
-                if(pos2[0]===1){
+                if(pos2[0]===1 ){
                   updatePrioridad(elem.id, 'out');
+                  var rows = document.getElementById("pacientes").getElementsByTagName("tr").length;
+                  pos_nueva[1] = rows;
+                  rd.moveObject({
+                      obj: elem,
+                      target: pos_nueva
+                  });
+                  document.getElementById("tiempos_especialidades").deleteRow(pos1[1]);
+                  var row = document.getElementById("pacientes").insertRow().insertCell(0);
+                  row.className = "table-primary";
                 } else {
-                  updatePrioridad(elem.id, 'in');
+                 // tiempoCompleto(elem.id, document.getElementById('tiempo_restante').innerHTML)
+                  //boolean = document.getElementById('boolean').innerHTML
+                  //console.log('bool' + ' ' + boolean)
+                  if (0){
+                    rd.moveObject({
+                      obj: elem,
+                      target: pos1
+                    });
+                  } else {
+                    updatePrioridad(elem.id, 'in');
+                    var rows = document.getElementById("tiempos_especialidades").getElementsByTagName("tr").length;
+                    pos_nueva[1] = rows;
+                    rd.moveObject({
+                        obj: elem,
+                        target: pos_nueva
+                    });
+                   document.getElementById("pacientes").deleteRow(pos1[1]);
+                   var row = document.getElementById("tiempos_especialidades").insertRow().insertCell(0)
+                   row.className = "table-success";
+                  }
                 }
-                pos1 = null;
-                pos2 = null;
-                elem = null;
+            } else {
+               rd.moveObject({
+                      obj: elem,
+                      target: pos1
+               });
             }
+            //location.reload()
+            pos1 = null;
+            pos2 = null;
+            elem = null;
         }
+
 
       };
 
@@ -150,6 +200,7 @@
           'id_result': {{id_result}},
           'especialidad': '{{especialidad}}',
           'tiempo_especialidad': {{tiempo_especialidad}},
+          'tiempo_restante': {{tiempo_restante}},
           'idp': idp,
           'mode': mode,
         });
@@ -166,6 +217,35 @@
 
                 var response = JSON.parse(http.responseText);
                 document.getElementById('tiempo_restante').innerHTML = response;
+            }
+
+        };
+
+        http.send(data);
+      }
+
+
+      function tiempoCompleto(idp, time) {
+
+        var http = new XMLHttpRequest();
+        var url = "{% url 'tiempo-completo' %}";
+        var data = JSON.stringify({
+          'id_result': {{id_result}},
+          'idp': idp,
+          'time': time,
+        });
+
+        http.open('POST', url, true);
+        http.setRequestHeader('X-CSRFToken','{{ csrf_token }}');
+        http.setRequestHeader("Content-type", "application/json");
+
+        http.onreadystatechange = function() {
+
+            if (http.readyState == 4 && http.status == 200) {
+
+                var response = http.responseText;
+                document.getElementById('boolean').innerHTML = response;
+
             }
 
         };

@@ -8,7 +8,7 @@ from django.utils.translation import ugettext_lazy as _
 # aca se importan las cosas desde los otros archivos .py (en la misma carpeta, con .)
 from .forms import FileUploadForm
 from .models import FileUpload, Ingreso, Schedule
-from .utils import process_data, run_model, assign_list, assign_list2, normalizar_texto
+from .utils import process_data, run_model, assign_list, assign_list2, assign_list3, normalizar_texto
 
 import time
 import math
@@ -186,10 +186,12 @@ class PacientesView(View):
         if not especialidad:
             especialidad = especialidades.first()['especialidad']
 
+        schedule = Schedule.objects.filter(file=file, especialidad=especialidad)
         ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion') \
             .aggregate(time=Sum('duracion'), count=Count('duracion'))
 
-        ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad).order_by('-tiempoespera')
+        ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad).order_by(
+            '-tiempoespera')
         ingresos = ingresos.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
 
         tiempo_especialidad = 0
@@ -198,22 +200,18 @@ class PacientesView(View):
                 tiempo_especialidad = e['time']
                 break
 
-        if ingresos_duracion['time'] and ingresos_duracion['count']:
-            tiempo_restante = tiempo_especialidad - (ingresos_duracion['time'] + 15 * ingresos_duracion['count'])
-        else:
-            tiempo_restante = tiempo_especialidad
-
-        if tiempo_restante > 0:
-            for i in ingresos:
-                if i.duracion and tiempo_restante > i.duracion + 15:
-                    i.prioridad = 1
-                    i.save()
-                    tiempo_restante = tiempo_restante - (i.duracion + 15)
-
         ingresos_prioritarios = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).order_by(
             '-tiempoespera')
         ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=0).order_by(
             '-tiempoespera')
+
+        tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
+
+        # ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion') \
+        #     .aggregate(time=Sum('duracion'), count=Count('duracion'))
+        #
+        # tiempo_restante = tiempo_especialidad - (ingresos_duracion['time'] + 15 * ingresos_duracion['count'])
+        #        tiempo_restante = getmaximumtimeavailable(ingresos, ingresos_prioritarios, )
 
         self.context['tiempo_especialidad'] = tiempo_especialidad
         self.context['tiempo_restante'] = tiempo_restante
@@ -250,8 +248,8 @@ class PacientesViewFirstTime(View):
             especialidad = especialidades.first()['especialidad']
 
         if True:  # itera las lista prioritaria para tooodas las especialidades
-            schedule = Schedule.objects.filter(file=file)
             for e in especialidades:
+                schedule = Schedule.objects.filter(file=file, especialidad=e['especialidad'])
                 ingresoss = Ingreso.objects.filter(file=file, especialidad=e['especialidad']).order_by(
                     '-tiempoespera')
                 ingresoss = ingresoss.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
@@ -260,7 +258,7 @@ class PacientesViewFirstTime(View):
                     '-tiempoespera')
                 assign_list2(file, schedule, ingresoss, ingresoss_prioritarios)
 
-        schedule = Schedule.objects.filter(file=file)
+        schedule = Schedule.objects.filter(file=file, especialidad=especialidad)
         ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion') \
             .aggregate(time=Sum('duracion'), count=Count('duracion'))
 
@@ -279,12 +277,7 @@ class PacientesViewFirstTime(View):
         ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=0).order_by(
             '-tiempoespera')
 
-        assign_list2(file, schedule, ingresos, ingresos_prioritarios)
-
-        ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion') \
-            .aggregate(time=Sum('duracion'), count=Count('duracion'))
-
-        tiempo_restante = tiempo_especialidad - (ingresos_duracion['time'] + 15 * ingresos_duracion['count'])
+        tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
 
         self.context['tiempo_especialidad'] = tiempo_especialidad
         self.context['tiempo_restante'] = tiempo_restante
@@ -322,14 +315,15 @@ def updateSchedule(request):
                 s2duration = schedule2.first().initial_duration
                 schedule2.update(room=room1, day=day1, bloque=bloque1, initial_duration=s1duration,
                                  remaining_duration=s1duration)
+
+
             if id_initial:
                 Schedule.objects.filter(pk=id_initial).update(room=room2, day=day2, bloque=bloque2,
                                                               initial_duration=s2duration,
                                                               remaining_duration=s2duration)
 
             especialidades = list(Schedule.objects.filter(file=file).values('especialidad'). \
-                                  annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by(
-                '-time'))
+                annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by('-time'))
 
         except:
             return HttpResponse(_('Not found or cannot update!'))
@@ -346,6 +340,7 @@ def updatePrioridad(request):
             id_result = data['id_result']
             especialidad = data['especialidad']
             tiempo_especialidad = data['tiempo_especialidad']
+            tiempo_restante = data['tiempo_restante']
             idp = data['idp']
             mode = data['mode']
             file = FileUpload.objects.get(pk=id_result)
@@ -354,28 +349,49 @@ def updatePrioridad(request):
 
         try:
             ingreso = Ingreso.objects.get(file=file, pk=int(idp))
-            print(ingreso)
             if mode == 'in':
-                print('in')
                 ingreso.prioridad = 1
             else:
-                print('out')
                 ingreso.prioridad = 0
             ingreso.save()
 
-            ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values(
-                'duracion') \
-                .aggregate(time=Sum('duracion'), count=Count('duracion'))
+            schedule = Schedule.objects.filter(file=file, especialidad=especialidad)
 
-            if ingresos_duracion['time'] and ingresos_duracion['count']:
-                tiempo_restante = tiempo_especialidad - (ingresos_duracion['time'] + 15 * ingresos_duracion['count'])
-            else:
-                tiempo_restante = tiempo_especialidad
+            ingresos_prioritarios = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).order_by(
+                '-tiempoespera')
+            ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=0).order_by(
+                '-tiempoespera')
+
+            tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
 
         except:
             return HttpResponse(_('Not found or cannot update!'))
 
         return JsonResponse(tiempo_restante, safe=False)
+
+    return HttpResponse(_('No post!'))
+
+def tiempoCompleto(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            id_result = data['id_result']
+            idp = data['idp']
+            time = data['time']
+            file = FileUpload.objects.get(pk=id_result)
+        except:
+            return HttpResponse(_('Invalid request!'))
+
+        try:
+            boolean = '1'
+            ingreso = Ingreso.objects.get(file=file, pk=int(idp))
+            if (float(ingreso.duracion) > float(time)):
+                boolean = '0'
+
+        except:
+            return HttpResponse(_('Not found or cannot update!'))
+
+        return HttpResponse(_(boolean))
 
     return HttpResponse(_('No post!'))
 
@@ -409,6 +425,71 @@ def median_value(queryset, term):
 
 
 def export_xls(request, id_result):
+    if request.method == 'GET':
+        try:
+            #id_result = request.GET.get('id_result', None)
+            file = FileUpload.objects.get(pk=id_result)
+        except:
+            return HttpResponse(_('Invalid request!'))
+        try:
+            response = HttpResponse(content_type='application/ms-excel')
+            response['Content-Disposition'] = 'attachment; filename="Lista_de_Pacientes.xls"'
+
+            especialidades = Schedule.objects.filter(file=file).values('especialidad').distinct()
+
+            wb = xlwt.Workbook(encoding='utf-8')
+
+            for e in especialidades:
+                titulo = e['especialidad']
+                ws = wb.add_sheet(titulo)
+
+                # Sheet header, first row
+
+                row_num = 0
+
+                font_style = xlwt.XFStyle()
+                font_style.font.bold = True
+
+                columns = ['RUN_prior', 'OPERACION_prior', 'TIEMPO_ESPERADO_prior', 'DURACION_prior',
+                           '', '', 'RUN', 'OPERACION', 'TIEMPO_ESPERADO', 'DURACION', ]
+
+                for col_num in range(len(columns)):
+                    ws.write(row_num, col_num, columns[col_num], font_style)
+
+                # Sheet body, remaining rows
+                font_style = xlwt.XFStyle()
+
+                rows_prior = Ingreso.objects.filter(file=file,
+                                                    especialidad=e['especialidad'],
+                                                    prioridad=1).values_list('run',
+                                                                             'prestacion',
+                                                                             'tiempoespera',
+                                                                             'duracion').order_by('-tiempoespera')
+                for row in rows_prior:
+                    row_num += 1
+                    for col_num in range(4):
+                        ws.write(row_num, col_num, row[col_num], font_style)
+
+                rows_no_prior = Ingreso.objects.filter(file=file,
+                                                       especialidad=e['especialidad'],
+                                                       prioridad=0).values_list('run',
+                                                                                'prestacion',
+                                                                                'tiempoespera',
+                                                                                'duracion').order_by('-tiempoespera')
+                row_num = 0
+                for row in rows_no_prior:
+                    row_num += 1
+                    for col_num in range(4):
+                        ws.write(row_num, col_num + 6, row[col_num], font_style)
+            wb.save(response)
+
+        except:
+            return HttpResponse(_('Not found or cannot update!'))
+        return response
+
+    return HttpResponse(_('No post!'))
+
+def export_xls2(request, id_result):
     if request.method == 'GET':
         try:
             #id_result = request.GET.get('id_result', None)

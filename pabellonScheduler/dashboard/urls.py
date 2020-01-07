@@ -11,10 +11,12 @@ urlpatterns = [
     path('programacion', ScheduleView.as_view(), name='upload-file'),
     path('update-schedule', updateSchedule, name='update-schedule'),
     path('update-prioridad', updatePrioridad, name='update-prioridad'),
+    path('tiempo-completo', tiempoCompleto, name='tiempo-completo'),
     path('programacion/<int:id_result>/lista', ListaView.as_view(), name = 'programacion-lista'),
     path('programacion/<int:id_result>/pacientes', PacientesViewFirstTime.as_view(), name='programacion-pacientes'),
     path('programacion/<int:id_result>/pacientes', PacientesView.as_view(), name = 'programacion-pacientes'),
     path('programacion/<int:id_result>/pacientes/<str:especialidad>', PacientesView.as_view(), name = 'programacion-pacientes-esp'),
     path('export_xls', export_xls, name='export_xls'),
     path('export_xls/<int:id_result>', export_xls, name='export_xls'),
+    path('export_xls2/<int:id_result>', export_xls2, name='export_xls2'),
 ]
