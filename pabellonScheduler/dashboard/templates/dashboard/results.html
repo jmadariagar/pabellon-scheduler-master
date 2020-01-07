@@ -36,10 +36,10 @@
                     <td>
                       {% for s in schedule %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
-                      <div class="redips-drag ">{{ s.especialidad }}</div>
+                      <div class="redips-drag ">{{s.especialidad}}</div>
                       {% endif %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
-                      <div class="redips-drag"><B>{{ s.especialidad }}
+                      <div class="redips-drag"><B>{{s.especialidad}}
                       BLOQUE EXTENDIDO</B></div> 
                       {% endif %}
                       {% endfor %}
