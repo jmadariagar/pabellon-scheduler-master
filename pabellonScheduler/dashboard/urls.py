@@ -9,6 +9,7 @@ urlpatterns = [
     path('', IndexView.as_view(), name='index-pabellon'), # url vacia llega aca
     path('programacion/<int:id_result>', ScheduleView.as_view(), name = 'programacion'),
     path('programacion', ScheduleView.as_view(), name='upload-file'),
+    path('programacion/avanzado', ScheduleView.as_view(), name='avanzado'),
     path('update-schedule', updateSchedule, name='update-schedule'),
     path('update-prioridad', updatePrioridad, name='update-prioridad'),
     path('tiempo-completo', tiempoCompleto, name='tiempo-completo'),

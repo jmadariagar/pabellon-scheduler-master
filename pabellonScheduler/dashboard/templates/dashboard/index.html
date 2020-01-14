@@ -30,7 +30,7 @@
 
                   {% endif %}
                   <div class="form-group">
-                    <label">Campos necesarios: 'RUN',  'PRESTA_MIN' (código operación),  'PRESTA_EST' (especialidad),  'F_ENTRADA' (fecha ingreso LEQ)</label> <br>
+                    <label">Campos necesarios: 'RUN',  'PRESTA_MIN' (código operación),  'PRESTA_EST' (especialidad),  'F_ENTRADA' (fecha ingreso SAM)</label> <br>
                     <label for="examplefile">Archivo</label>
                     <input name="file" type="file" class="form-control" id="examplefile" aria-describedby="filelHelp" placeholder="Enter email">
                     <small id="fileHelp" class="form-text text-muted">Archivo de lista de espera quirúrgica .</small>
@@ -102,6 +102,17 @@
 
                   <button type="submit" class="btn btn-primary">Hacer Distribución de Bloques</button>
                 </form>
+              </div>
+              <br>
+              <div>
+<!--                <form method="post" action="/programacion/avanzado">-->
+<!--                  {% csrf_token %}-->
+
+
+<!--                  <div class="col-md-4">-->
+<!--                    <button style="width:220px;height:40px; type="submit" class="btn btn-primary">Opciones Avanzadas </button>-->
+<!--                  </div>-->
+<!--                </form>-->
               </div>
             </div>
           </div>
