@@ -6,11 +6,11 @@ class FileUpload(models.Model): #el excel que se sube
     created = models.DateTimeField(auto_now_add=True)
     file = models.FileField(upload_to='uploads/')
     date = models.DateField(null=True)
-    ndays = models.IntegerField(null=True)
-    ndaysAM = models.IntegerField(null=True)
+    ndays = models.IntegerField(null=True, default=5)
+    ndaysAM = models.IntegerField(null=True, default=5)
     nrooms = models.IntegerField(null=True)
-    hoursam = models.IntegerField(null=True)
-    hourspm = models.IntegerField(null=True)
+    hoursam = models.IntegerField(null=True, default=5)
+    hourspm = models.IntegerField(null=True, default=3)
 
 class Schedule(models.Model): #bloque
     especialidad = models.CharField(null=True, max_length=100)

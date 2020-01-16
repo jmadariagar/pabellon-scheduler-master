@@ -7,6 +7,7 @@ from .views import *
 
 urlpatterns = [
     path('', IndexView.as_view(), name='index-pabellon'), # url vacia llega aca
+    path('advanced', IndexViewAdvanced.as_view(), name='index-avanzado'), # url vacia llega aca
     path('programacion/<int:id_result>', ScheduleView.as_view(), name = 'programacion'),
     path('programacion', ScheduleView.as_view(), name='upload-file'),
     path('update-schedule', updateSchedule, name='update-schedule'),
