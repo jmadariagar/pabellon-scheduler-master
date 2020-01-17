@@ -5,6 +5,7 @@
 {% block stylesheets %}
 {{ block.super}}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 {% endblock %}
 
 
@@ -42,66 +43,178 @@
                       <label for="date">Fecha Inicio Programación</label>
                       <input id="date" name="date" type="text" class="form-control" value='{% now "d/m/Y" %}' autocomplete="off">
                     </div>
-                    <div class="form-group col-md-2">
-                      <label for="inputDiasAm">N° Bloques AM</label>
-                      <input name="ndaysAM" type="text" class="form-control" id="inputDiasAm" value="5">
-                    </div>
-                    <div class="form-group col-md-2">
+                    <div class="form-group col-md-2" style="display:none">
                       <label for="inputDiasPM">N° Bloques PM</label>
                       <input name="ndays" type="text" class="form-control" id="inputDiasPM" value="5">
                     </div>
+
                     <div class="form-group col-md-2">
-                      <label for="inputSala">N° Salas de Operación </label>
-                      <input name="nrooms" type="text" class="form-control" id="inputSala" value="2">
+                      <label for="exampleFormControlSelect1">N° Salas de Operación</label>
+                      <select name="nrooms"  class="form-control" id="exampleFormControlSelect1" >
+                        <option value = "1">1</option>
+                        <option value = "2" selected="selected">2</option>
+                        <option value = "3">3</option>
+                        <option value = "4">4</option>
+                        <option value = "5">5</option>
+                      </select>
                     </div>
-                    <div class="form-group col-md-2">
-                      <label for="inputAM">Horas en bloque AM</label>
-                      <input name="hoursam" type="text" class="form-control" id="inputAM" value="5">
-                    </div>
-                    <div class="form-group col-md-2">
-                      <label for="inputPM">Horas en bloque PM</label>
-                      <input name="hourspm" type="text" class="form-control" id="inputPM" value="3">
-                    </div>
+
+                    <table class="table">
+                      <thead>
+                      <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Día 1</th>
+                        <th scope="col">Día 2</th>
+                        <th scope="col">Día 3</th>
+                        <th scope="col">Día 4</th>
+                        <th scope="col">Día 5</th>
+                      </tr>
+                      </thead>
+                      <tbody>
+                      <tr>
+                        <th scope="row">Bloque AM (horas)</th>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect2"></label>
+                            <select name="dia1AM"  class="form-control" id="exampleFormControlSelect2" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" selected="selected">5</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect3"></label>
+                            <select name="dia2AM"  class="form-control" id="exampleFormControlSelect3" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" selected="selected">5</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect4"></label>
+                            <select name="dia3AM"  class="form-control" id="exampleFormControlSelect4" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" selected="selected">5</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect5"></label>
+                            <select name="dia4AM"  class="form-control" id="exampleFormControlSelect5" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" selected="selected">5</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect6"></label>
+                            <select name="dia5AM"  class="form-control" id="exampleFormControlSelect6" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" selected="selected">5</option>
+                            </select>
+                          </div>
+                        </td>
+                      </tr>
+                      <tr>
+                        <th scope="row">Bloque PM (horas)</th>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect7"></label>
+                            <select name="dia1PM"  class="form-control" id="exampleFormControlSelect7" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3" selected="selected">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" >5</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect8"></label>
+                            <select name="dia2PM"  class="form-control" id="exampleFormControlSelect8" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3" selected="selected">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" >5</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect9"></label>
+                            <select name="dia3PM"  class="form-control" id="exampleFormControlSelect9" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3" selected="selected">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" >5</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect10"></label>
+                            <select name="dia4PM"  class="form-control" id="exampleFormControlSelect10" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2">2</option>
+                              <option value = "3" selected="selected">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5" >5</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td>
+                          <div class="form-group">
+                            <label for="exampleFormControlSelect11"></label>
+                            <select name="dia5PM"  class="form-control" id="exampleFormControlSelect11" >
+                              <option value = "0">0</option>
+                              <option value = "1">1</option>
+                              <option value = "2" selected="selected">2</option>
+                              <option value = "3">3</option>
+                              <option value = "4">4</option>
+                              <option value = "5">5</option>
+                            </select>
+                          </div>
+                        </td>
+                      </tr>
+                      </tbody>
+                    </table>
                   </div>
-
-                  <!--<div class="form-group row">-->
-                  <!--<div class="col-sm-10 offset-sm-2 ">-->
-                  <!--Feriado?-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputLunes" class="col-sm-2 col-form-label">Lunes</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputLunes">-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputMartes" class="col-sm-2 col-form-label">Martes</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputMartes">-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputMiercoles" class="col-sm-2 col-form-label">Miércoles</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputMiercoles">-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputJueves" class="col-sm-2 col-form-label">Jueves</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputJueves">-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputViernes" class="col-sm-2 col-form-label">Viernes</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputViernes">-->
-                  <!--</div>-->
-                  <!--</div>-->
-
-                  <button type="submit" class="btn btn-primary">Hacer Distribución de Bloques</button>
+                  <button style="width:220px;height:40px; type="submit" class="btn btn-primary">Hacer Distribución de Bloques</button>
                 </form>
+                <br>
+                <div>
+                </div>
               </div>
             </div>
           </div>

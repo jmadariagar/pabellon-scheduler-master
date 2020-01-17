@@ -104,9 +104,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
 
     operations = parameters.index
 
-    T = max(int(file.ndays), int(file.ndaysAM)) # [integer] number of days for the planning horizon
-    T_manana = int(file.ndaysAM) - min(int(file.ndays), int(file.ndaysAM))
-    T_tarde = int(file.ndays) - min(int(file.ndays), int(file.ndaysAM))
+    T = int(file.ndays)
     R = int(file.nrooms)
 
 
@@ -175,20 +173,31 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
     u = 15              # tiempo de limpieza
 
     # Regular day
-    q_AM = int(file.hoursam)
-    q_PM = int(file.hourspm)
-    q = q_AM + q_PM     # Horas de trabajo por día
 
-    # Friday            
-    q_PMF = 2           # El viernes trabajan 2 horas en la tarde en vez de 3. Supongo que son menos
-    q_F = q_AM + q_PMF  # Horas de trabajo dia viernes
+    def q_AM(t):
+        if t == 1:
+            return int(file.dia1AM)
+        elif t == 2:
+            return int(file.dia2AM)
+        elif t == 3:
+            return int(file.dia3AM)
+        elif t == 4:
+            return int(file.dia4AM)
+        elif t == 5:
+            return int(file.dia5AM)
 
-    def q_PM_(t):
+    def q_PM(t):
+        if t == 1:
+            return int(file.dia1PM)
+        elif t == 2:
+            return int(file.dia2PM)
+        elif t == 3:
+            return int(file.dia3PM)
+        elif t == 4:
+            return int(file.dia4PM)
+        elif t == 5:
+            return int(file.dia5PM)
 
-        if isFriday(t) == 1:
-            return q_PMF
-        else:
-            return q_PM
 
     requiredTime = {}
 
@@ -212,39 +221,37 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
     for t in times:
         pabellon_disponible_AM[t] = 1
         pabellon_disponible_PM[t] = 1
-        if T_manana > 0:
-            pabellon_disponible_PM[t] = 0
-            T_manana -= 1
-        elif T_tarde > 0:
+        if q_AM(t) == 0:
             pabellon_disponible_AM[t] = 0
-            T_tarde -= 1
-        else:
+        if q_PM(t) == 0:
+            pabellon_disponible_PM[t] = 0
+        elif q_AM(t) > 0:
             dias_completos.append(t)
 
     specialties3hrs = []
     specialties5hrs = []
     specialties3y5 = []
-    for t in dias_completos:
-        pabellones = R
-        for s in specialties:
-            cola = queue[queue["Service"] == s]
-            Max_Duracion = cola[cola["Waiting_Time"] == max(cola["Waiting_Time"])]["MAIN_DURATION"][0]
-            if Max_Duracion >= 300 and pabellones > 0 and s not in specialties3y5:
-                specialties5hrs.append([s ,t])
-                specialties3y5.append(s)
-                pabellones -= 1
-            elif Max_Duracion >= 180 and Max_Duracion < 300 and pabellones > 0 and s not in specialties3y5:
-                specialties3hrs.append([s, t])
-                specialties3y5.append(s)
-                pabellones -= 1
+    specialties_new = specialties
+    if len(dias_completos) >= 4:
+        for t in dias_completos:
+            pabellones = R
+            for s in specialties:
+                cola = queue[queue["Service"] == s]
+                Max_Duracion = cola[cola["Waiting_Time"] == max(cola["Waiting_Time"])]["MAIN_DURATION"][0]
+                if Max_Duracion >= 300 and pabellones > 0 and s not in specialties3y5:
+                    specialties5hrs.append([s, t])
+                    specialties3y5.append(s)
+                    pabellones -= 1
+                elif Max_Duracion >= 180 and Max_Duracion < 300 and pabellones > 0 and s not in specialties3y5:
+                    specialties3hrs.append([s, t])
+                    specialties3y5.append(s)
+                    pabellones -= 1
 
-    specialties_new = list(set(specialties) - set(specialties3y5))
-    print(specialties_new)
-    print(specialties3hrs)
-    print(specialties5hrs)
+        specialties_new = list(set(specialties) - set(specialties3y5))
+
     H = 0
     for t in times:
-        H +=  R * (pabellon_disponible_AM[t] * q_AM + pabellon_disponible_PM[t] * q_PM_(t))
+        H +=  R * (pabellon_disponible_AM[t] * q_AM(t) + pabellon_disponible_PM[t] * q_PM(t))
 
 
     h = {s: H * requiredTime[s] / totalRequiredTime for s in specialties}       # Horas ofrecibles de acuerdo a proporciones de tiempos requeridos por especialidad
@@ -287,11 +294,11 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         return constraint
 
     def isGranularity(n):                   ### AQUI esto habra que cambiarlo de acuerdo a las horas por turno ingresadas por usuario?
-        leftovers = n % q_AM
-        if (leftovers % q_PM) == 0:
+        leftovers = n % 5
+        if (leftovers % 3) == 0:
             return True
         else:
-            leftovers = n % q_PM
+            leftovers = n % 3
 
             if leftovers % 5 == 0:
                 return True
@@ -342,7 +349,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
 
     if roundLowSwitch:
         roundLowConstr = {
-            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM * b_AM[s, t] + q_PM_(t) * b_PM[s, t] for t in times),
+            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
                                                   sense=plp.LpConstraintGE,
                                                   rhs=lowerBounds[s],
                                                   name="roundLow_{0}".format(s)))
@@ -352,7 +359,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
 
     if roundUpSwitch:
         roundUpConstr = {
-            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM * b_AM[s, t] + q_PM_(t) * b_PM[s, t] for t in times),
+            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
                                                   sense=plp.LpConstraintLE,
                                                   rhs=upperBounds[s],
                                                   name="roundUp_{0}".format(s)))
@@ -391,7 +398,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
                                                          name="Restric5h2_{0}".format(i)))
                    for i in range(len(specialties5hrs))}
 
-    objective = plp.lpSum(w[s] * (q_AM * b_AM[s, t] + q_PM_(t) * b_PM[s, t]) for s in specialties for t in times)
+    objective = plp.lpSum(w[s] * (q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t]) for s in specialties for t in times)
 
     model.sense = plp.LpMaximize
     model.setObjective(objective)
@@ -411,7 +418,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         blocks.at[s, 'Fractional hours'] = h[s]
         blocks.at[s, 'Offered AM blocks'] = plp.value(plp.lpSum(b_AM[s, t] for t in times))
         blocks.at[s, 'Offered PM blocks'] = plp.value(plp.lpSum(b_PM[s, t] for t in times))
-        blocks.at[s, 'Offered hours'] = plp.value(plp.lpSum(q_AM * b_AM[s, t] + q_PM_(t) * b_PM[s, t] for t in times))
+        blocks.at[s, 'Offered hours'] = plp.value(plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times))
 
     schedules = {}
 
@@ -425,8 +432,8 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
             if [s, t] in specialties5hrs and in5hr:
                 schedule.iat[0, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j + 1, bloque='AM',
-                                        file=file, initial_duration=((q_AM + q_PM_(t)) * 60),
-                                        remaining_duration=((q_AM + q_PM_(t)) * 60),
+                                        file=file, initial_duration=((q_AM(t) + q_PM(t)) * 60),
+                                        remaining_duration=((q_AM(t) + q_PM(t)) * 60),
                                         bloque_extendido=1)
                 new_schedule.save()
                 schedule.iat[1, j] = s
@@ -447,7 +454,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
             while b > 0:
                 schedule.iat[i, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j+1, bloque='AM',
-                                        file=file, initial_duration=(q_AM*60), remaining_duration=(q_AM*60))
+                                        file=file, initial_duration=(q_AM(t)*60), remaining_duration=(q_AM(t)*60))
                 new_schedule.save()
                 b -= 1
                 j += 1
@@ -460,7 +467,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
             while b > 0:
                 schedule.iat[i, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j+1, bloque='PM',
-                                    file=file, initial_duration=(q_PM_(t)*60), remaining_duration=(q_PM_(t)*60))
+                                    file=file, initial_duration=(q_PM(t)*60), remaining_duration=(q_PM(t)*60))
                 new_schedule.save()
                 b -= 1
                 j += 1
