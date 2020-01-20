@@ -494,7 +494,7 @@ def export_xls(request, id_result):
             especialidades = Schedule.objects.filter(file=file).values('especialidad').distinct()
             wb = xlwt.Workbook(encoding='utf-8')
             for e in especialidades:
-                titulo = e['especialidad']
+                titulo = e['especialidad'][0:22]
                 ws = wb.add_sheet(titulo)
                 row_num = 0
                 font_style = xlwt.XFStyle()
