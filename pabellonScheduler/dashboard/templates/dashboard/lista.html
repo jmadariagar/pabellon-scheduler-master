@@ -5,8 +5,6 @@
 {% block stylesheets %}
 {{ block.super}}
 <link href="/static/drag.css" rel="stylesheet">
-<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
-<script src="https://files.codepedia.info/files/uploads/iScripts/html2canvas.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -43,7 +41,7 @@
                         Tiempo restante: {{s.remaining_duration}} min</div>
                       {% for i in s.ingreso_set.all %}
                       <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
-                        P:{{i.orden}}  - D:{{i.duracion}} min</div>
+                        TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
                       {% endif %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
@@ -53,7 +51,7 @@
                         Tiempo restante: {{s.remaining_duration}} min</div>
                       {% for i in s.ingreso_set.all %}
                       <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
-                        P:{{i.orden}}  - D:{{i.duracion}} min</div>
+                        TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
                       {% endif %}
                       {% endfor %}
@@ -71,7 +69,7 @@
                         Tiempo restante: {{s.remaining_duration}} min</div>
                       {% for i in s.ingreso_set.all %}
                       <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
-                        P:{{i.orden}}  - D:{{i.duracion}} min</div>
+                        TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
                       {% endif %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 1%}
@@ -84,7 +82,7 @@
                       </div>
                       {% for i in s.ingreso_set.all %}
                       <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
-                        P:{{i.orden}}  - D:{{i.duracion}} min</div>
+                        TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
                       {% endif %}
                       {% endfor %}
@@ -96,13 +94,11 @@
                 </table>
               </div>
               <br>
-
               <form method="get" action="/export_xls2/{{id_result}}">
                 <div class="col-md-4">
-                  <button style="width:250px;height:40px; type="submit" class="btn btn-primary">Exportar Lista de Pacientes (Excel)</button>
+                  <button style="width:250px;height:40px; type="submit" class="btn btn-primary">Exportar Programación (Excel)</button>
                 </div>
               </form>
-
               <br>
               <div class="row">
                 <div class="col-md-6">
@@ -137,9 +133,4 @@
 
 {% block javascripts %}
 {{ block.super }}
-
-<script>
-
-</script>
 {% endblock %}
-
