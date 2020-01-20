@@ -49,9 +49,10 @@ def process_data(file, programming_date):
         if type(code) == str:
             a, b, c = code.split('-')
             code = int(a + b + c)
-            Datos.at[row, 'PRESTA_MIN'] = code
+            Datos.at[row, 'PRESTA_MIN'] = str(code) #la nueva base de datos para calcular los tiempos esta en str
+                                                    #la antigua esta en int ()
         else:
-            Datos.at[row, 'PRESTA_MIN'] = 0
+            Datos.at[row, 'PRESTA_MIN'] = '0'
 
         yearE = Datos.at[row, 'F_ENTRADA'].year
         monthE = Datos.at[row, 'F_ENTRADA'].month
@@ -66,21 +67,19 @@ def process_data(file, programming_date):
     Datos.reset_index(drop=True, inplace=True)
     Datos.drop_duplicates(['ID'], inplace=True)
 
-    file_name = 'parameters/Extracted Parameters'
+    file_name = 'parameters/Extracted Parameters_new'
     with open(file_name, 'rb') as file_object:
         parameters = pickle.load(file_object)
 
     parameters = parameters[['MAIN_DURATION']]
     Datos = Datos.merge(parameters, how='left', left_on='PRESTA_MIN', right_index=True)
 
-    print(Datos.shape)
-
     return Datos, missingColumns
 
 
 def run_model(queue, programming_date, file):  # Este es el que corre para
 
-    file_name = 'parameters/Extracted Parameters'
+    file_name = 'parameters/Extracted Parameters_new'
     with open(file_name, 'rb') as file_object:
         parameters = pickle.load(file_object)
 
@@ -251,9 +250,9 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
 
     H = 0
     for t in times:
-        H +=  R * (pabellon_disponible_AM[t] * q_AM(t) + pabellon_disponible_PM[t] * q_PM(t))
+        H += R * (pabellon_disponible_AM[t] * q_AM(t) + pabellon_disponible_PM[t] * q_PM(t))
 
-
+    print(totalRequiredTime)
     h = {s: H * requiredTime[s] / totalRequiredTime for s in specialties}       # Horas ofrecibles de acuerdo a proporciones de tiempos requeridos por especialidad
 
     l = list(h.items())                         # transforma diccionario h en lista de tuplas (key,value)
