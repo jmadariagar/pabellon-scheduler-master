@@ -31,7 +31,8 @@
 
                                     {% endif %}
                                     <div class="form-group">
-                                        <label>Campos necesarios: 'RUN',  'PRESTA_MIN' (código operación),  'PRESTA_EST' (especialidad),  'F_ENTRADA' (fecha ingreso LEQ)</label> <br>
+                                        <label>Campos necesarios: 'RUN',  'PRESTA_MIN' (código operación),  'PRESTA_EST' (especialidad),  'F_ENTRADA' (fecha ingreso SAM),
+                                        <br> 'AT_CERR' (con valores 1 y 0), 'GES' (con valores 1 y 0), 'REPROG' (con valores 1 y 0), 'CLINIC_PRIOR' (con valores 1, 2 y 3)  </label> <br>
                                         <label for="examplefile">Archivo</label>
                                         <input name="file" type="file" class="form-control" id="examplefile" aria-describedby="filelHelp" placeholder="Enter email">
                                         <small id="fileHelp" class="form-text text-muted">Archivo de lista de espera quirúrgica .</small>
@@ -94,10 +95,10 @@
                                             <label for="exampleFormControlSelect1">N° Salas de Operación</label>
                                             <select name="nrooms"  class="form-control" id="exampleFormControlSelect1" >
                                                 <option value = "1">1</option>
-                                                <option value = "2" selected="selected">2</option>
+                                                <option value = "2">2</option>
                                                 <option value = "3">3</option>
                                                 <option value = "4">4</option>
-                                                <option value = "5">5</option>
+                                                <option value = "5" selected="selected">5</option>
                                             </select>
                                         </div>
                                     </div>

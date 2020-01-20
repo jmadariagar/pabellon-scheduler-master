@@ -31,7 +31,8 @@
 
                   {% endif %}
                   <div class="form-group">
-                    <label>Campos necesarios: 'RUN',  'PRESTA_MIN' (código operación),  'PRESTA_EST' (especialidad),  'F_ENTRADA' (fecha ingreso LEQ)</label> <br>
+                    <label>Campos necesarios: 'RUN',  'PRESTA_MIN' (código operación),  'PRESTA_EST' (especialidad),  'F_ENTRADA' (fecha ingreso SAM),
+                                        <br> 'AT_CERR' (con valores 1 y 0), 'GES' (con valores 1 y 0), 'REPROG' (con valores 1 y 0), 'CLINIC_PRIOR' (con valores 1, 2 y 3)</label> <br>
                     <label for="examplefile">Archivo</label>
                     <input name="file" type="file" class="form-control" id="examplefile" aria-describedby="filelHelp" placeholder="Enter email">
                     <small id="fileHelp" class="form-text text-muted">Archivo de lista de espera quirúrgica .</small>
@@ -52,13 +53,14 @@
                       <label for="exampleFormControlSelect1">N° Salas de Operación</label>
                       <select name="nrooms"  class="form-control" id="exampleFormControlSelect1" >
                         <option value = "1">1</option>
-                        <option value = "2" selected="selected">2</option>
+                        <option value = "2">2</option>
                         <option value = "3">3</option>
                         <option value = "4">4</option>
-                        <option value = "5">5</option>
+                        <option value = "5" selected="selected">5</option>
                       </select>
                     </div>
-
+                    <br>
+                    <br>
                     <table class="table">
                       <thead>
                       <tr>
@@ -211,31 +213,34 @@
                     </table>
                   </div>
 
-                                      <div class="form-group col-md-2">
+                  <br>
+                  <br>
+                  <div class="form-row">
+                    <div class="form-group col-md-2">
                       <label for="alfa_at_cerr">Importancia Pacientes de Atención Cerrada</label>
-                      <input name="alfa_at_cerr" type="text" class="form-control" id="alfa_at_cerr" min="0" data-bind="value:replyNumber" value="10000">
+                      <input name="alfa_at_cerr" min = "0" class="form-control" type="number" id="alfa_at_cerr"  value="10000">
                     </div>
 
-                                      <div class="form-group col-md-2">
-                      <label for="alfa_ges">Importancia Pacientes GES</label>
-                      <input name="alfa_ges" type="text" class="form-control" id="alfa_ges" min="0" data-bind="value:replyNumber" value="1000">
+                    <div class="form-group col-md-2">
+                      <label for="alfa_ges">Importancia Pacientes <br> GES <br></label>
+                      <input name="alfa_ges" min = "0" class="form-control" type="number" id="alfa_ges"  value="1000">
                     </div>
 
-                                      <div class="form-group col-md-2">
+                    <div class="form-group col-md-2">
                       <label for="alfa_reprog">Importancia Pacientes Reprogramados</label>
-                      <input name="alfa_reprog" type="text" class="form-control" id="alfa_reprog" min="0" data-bind="value:replyNumber" value="100">
+                      <input name="alfa_reprog" min = "0" class="form-control" type="number" id="alfa_reprog"  value="100">
                     </div>
 
-                                      <div class="form-group col-md-2">
-                      <label for="alfa_clinic_prior">Importancia de la Prioridad Clínica </label>
-                      <input name="alfa_clinic_prior" type="text" class="form-control" id="alfa_clinic_prior" min="0" data-bind="value:replyNumber" value="10">
+                    <div class="form-group col-md-2">
+                      <label for="alfa_clinic_prior">Importancia de la Prioridad <br>Clínica</label>
+                      <input name="alfa_clinic_prior" min = "0" class="form-control" type="number" id="alfa_clinic_prior"  value="10">
                     </div>
 
-                                      <div class="form-group col-md-2">
-                      <label for="alfa_tiempo_espera">Importancia del Tiempo de Espera</label>
-                      <input name="alfa_tiempo_espera" type="text" class="form-control" id="alfa_tiempo_espera" min="0" data-bind="value:replyNumber" value="1">
+                    <div class="form-group col-md-2">
+                      <label for="alfa_tiempo_espera">Importancia del Tiempo <br>de Espera</label>
+                      <input name="alfa_tiempo_espera" min = "0" class="form-control" type="number" id="alfa_tiempo_espera"  value="1">
                     </div>
-
+                  </div>
                   <button style="width:220px;height:40px; type="submit" class="btn btn-primary">Hacer Distribución de Bloques</button>
                 </form>
                 <br>
