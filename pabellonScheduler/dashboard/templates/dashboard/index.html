@@ -5,140 +5,139 @@
 {% block stylesheets %}
 {{ block.super}}
 <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/css/bootstrap-datepicker3.min.css" rel="stylesheet">
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 {% endblock %}
 
 
 {% block content %}
 <main class="main-content bgc-grey-100">
-  <div id="mainContent">
-    <div class="row gap-20 masonry pos-r">
-      <div class="masonry-sizer col-md-6"></div>
-      <div class="masonry-item w-100">
-        <div class="row gap-20">
-          <div class="col-md-12">
-            <div class="bgc-white p-20 bd">
-              <h6 class="c-grey-900">Subir archivo de Lista de Espera</h6>
-              <div class="mT-30">
-                <form action="{% url 'upload-file' %}" method="post" enctype="multipart/form-data">
-                  {% csrf_token %}
-                  {% if mensaje %}
-                  <div class="alert alert-danger" role="alert">
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span>
-                    </button>
-                    <strong>Error:</strong> {{ mensaje }}
-                  </div>
+    <div id="mainContent">
+        <div class="row gap-20 masonry pos-r">
+            <div class="masonry-sizer col-md-6"></div>
+            <div class="masonry-item w-100">
+                <div class="row gap-20">
+                    <div class="col-md-12">
+                        <div class="bgc-white p-20 bd">
+                            <h6 class="c-grey-900">Subir archivo de Lista de Espera</h6>
+                            <div class="mT-30">
+                                <form action="{% url 'upload-file' %}" method="post" enctype="multipart/form-data">
+                                    {% csrf_token %}
+                                    {% if mensaje %}
+                                    <div class="alert alert-danger" role="alert">
+                                        <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span>
+                                        </button>
+                                        <strong>Error:</strong> {{ mensaje }}
+                                    </div>
 
-                  {% endif %}
-                  <div class="form-group">
-                    <label">Campos necesarios: 'RUN',  'PRESTA_MIN' (código operación),  'PRESTA_EST' (especialidad),  'F_ENTRADA' (fecha ingreso SAM)</label> <br>
-                    <label for="examplefile">Archivo</label>
-                    <input name="file" type="file" class="form-control" id="examplefile" aria-describedby="filelHelp" placeholder="Enter email">
-                    <small id="fileHelp" class="form-text text-muted">Archivo de lista de espera quirúrgica .</small>
-                  </div>
-                  <br>
-                  <h6 class="c-grey-900">Configuración del Programador</h6>
-                  <div class="form-row">
-                    <div class="form-group col-md-2">
-                      <label for="inputDias">Fecha Inicio Programación</label>
-                      <input id="date" name="date" type="text" class="form-control" value='{% now "d/m/Y" %}' autocomplete="off">
-                    </div>
-                    <div class="form-group col-md-2">
-                      <label for="inputDias">N° Bloques AM</label>
-                      <input name="ndaysAM" type="text" class="form-control" id="inputDias" value="5">
-                    </div>
-                    <div class="form-group col-md-2">
-                      <label for="inputDias">N° Bloques PM</label>
-                      <input name="ndays" type="text" class="form-control" id="inputDias" value="5">
-                    </div>
-                    <div class="form-group col-md-2">
-                      <label for="inputSala">N° Salas de Operación </label>
-                      <input name="nrooms" type="text" class="form-control" id="inputSala" value="2">
-                    </div>
-                    <div class="form-group col-md-2">
-                      <label for="inputAM">Horas en bloque AM</label>
-                      <input name="hoursam" type="text" class="form-control" id="inputAM" value="5">
-                    </div>
-                    <div class="form-group col-md-2">
-                      <label for="inputPM">Horas en bloque PM</label>
-                      <input name="hourspm" type="text" class="form-control" id="inputPM" value="3">
-                    </div>
-                  </div>
+                                    {% endif %}
+                                    <div class="form-group">
+                                        <label>Campos necesarios: 'RUN',  'PRESTA_MIN' (código operación),  'PRESTA_EST' (especialidad),  'F_ENTRADA' (fecha ingreso LEQ)</label> <br>
+                                        <label for="examplefile">Archivo</label>
+                                        <input name="file" type="file" class="form-control" id="examplefile" aria-describedby="filelHelp" placeholder="Enter email">
+                                        <small id="fileHelp" class="form-text text-muted">Archivo de lista de espera quirúrgica .</small>
+                                    </div>
+                                    <br>
+                                    <h6 class="c-grey-900">Configuración del Programador</h6>
+                                    <div class="form-row">
+                                        <div class="form-group col-md-2">
+                                            <label for="date">Fecha Inicio Programación</label>
+                                            <input id="date" name="date" type="text" class="form-control" value='{% now "d/m/Y" %}' autocomplete="off">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="inputDiasPM">N° Bloques PM</label>
+                                            <input name="ndays" type="text" class="form-control" id="inputDiasPM" value="5">
+                                        </div>
 
-                  <!--<div class="form-group row">-->
-                  <!--<div class="col-sm-10 offset-sm-2 ">-->
-                  <!--Feriado?-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputLunes" class="col-sm-2 col-form-label">Lunes</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputLunes">-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputMartes" class="col-sm-2 col-form-label">Martes</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputMartes">-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputMiercoles" class="col-sm-2 col-form-label">Miércoles</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputMiercoles">-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputJueves" class="col-sm-2 col-form-label">Jueves</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputJueves">-->
-                  <!--</div>-->
-                  <!--</div>-->
-                  <!--<div class="form-group row">-->
-                  <!--<label for="inputViernes" class="col-sm-2 col-form-label">Viernes</label>-->
-                  <!--<div class="col-sm-1">-->
-                  <!--<input class="form-check-input" type="checkbox" id="inputViernes">-->
-                  <!--</div>-->
-                  <!--</div>-->
-
-                  <button type="submit" class="btn btn-primary">Hacer Distribución de Bloques</button>
-                </form>
-              </div>
-              <br>
-              <div>
-<!--                <form method="post" action="/programacion/avanzado">-->
-<!--                  {% csrf_token %}-->
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia1AM">N° Bloques PM</label>
+                                            <input name="dia1AM" type="text" class="form-control" id="dia1AM" value="5">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia2AM">N° Bloques PM</label>
+                                            <input name="dia2AM" type="text" class="form-control" id="dia2AM" value="5">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia3AM">N° Bloques PM</label>
+                                            <input name="dia3AM" type="text" class="form-control" id="dia3AM" value="5">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia4AM">N° Bloques PM</label>
+                                            <input name="dia4AM" type="text" class="form-control" id="dia4AM" value="5">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia5AM">N° Bloques PM</label>
+                                            <input name="dia5AM" type="text" class="form-control" id="dia5AM" value="5">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia1PM">N° Bloques PM</label>
+                                            <input name="dia1PM" type="text" class="form-control" id="dia1PM" value="3">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia2PM">N° Bloques PM</label>
+                                            <input name="dia2PM" type="text" class="form-control" id="dia2PM" value="3">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia3PM">N° Bloques PM</label>
+                                            <input name="dia3PM" type="text" class="form-control" id="dia3PM" value="3">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia4PM">N° Bloques PM</label>
+                                            <input name="dia4PM" type="text" class="form-control" id="dia4PM" value="3">
+                                        </div>
+                                        <div class="form-group col-md-2" style="display:none">
+                                            <label for="dia5PM">N° Bloques PM</label>
+                                            <input name="dia5PM" type="text" class="form-control" id="dia5PM" value="2">
+                                        </div>
 
 
-<!--                  <div class="col-md-4">-->
-<!--                    <button style="width:220px;height:40px; type="submit" class="btn btn-primary">Opciones Avanzadas </button>-->
-<!--                  </div>-->
-<!--                </form>-->
-              </div>
+                                        <div class="form-group col-md-2">
+                                            <label for="exampleFormControlSelect1">N° Salas de Operación</label>
+                                            <select name="nrooms"  class="form-control" id="exampleFormControlSelect1" >
+                                                <option value = "1">1</option>
+                                                <option value = "2" selected="selected">2</option>
+                                                <option value = "3">3</option>
+                                                <option value = "4">4</option>
+                                                <option value = "5">5</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <button style="width:220px;height:40px; type="submit" class="btn btn-primary">Hacer Distribución de Bloques</button>
+                                </form>
+                                <br>
+                                <div>
+                                    <form method="get" action="/advanced">
+                                        <div align="left" class="col-md-9">
+                                            <button style="width:180px;height:40px; type="submit" class="btn btn-link">Opciones Avanzadas </button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
             </div>
-          </div>
         </div>
-      </div>
-    </div>
 
-    <div class="row gap-20 masonry pos-r">
-      <div class="masonry-sizer col-md-6"></div>
-      <div class="masonry-item w-100">
-        <div class="row gap-20">
-          <div class="col-md-12">
-            <div class="bgc-white p-20 bd">
-              <h6 class="c-grey-900">Programaciones anteriores</h6>
-              <div class="mT-30">
-                {% for file in files %}
-                <a href="programacion/{{file.pk}}">{{file.created}} - {{file.file}}</a><br><br>
-                {% endfor %}
-              </div>
+        <div class="row gap-20 masonry pos-r">
+            <div class="masonry-sizer col-md-6"></div>
+            <div class="masonry-item w-100">
+                <div class="row gap-20">
+                    <div class="col-md-12">
+                        <div class="bgc-white p-20 bd">
+                            <h6 class="c-grey-900">Programaciones anteriores</h6>
+                            <div class="mT-30">
+                                {% for file in files %}
+                                <a href="programacion/{{file.pk}}">{{file.created}} - {{file.file}}</a><br><br>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
-    </div>
 
-  </div>
+    </div>
 </main>
 {% endblock content %}
 

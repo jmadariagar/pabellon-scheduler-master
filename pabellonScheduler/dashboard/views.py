@@ -32,6 +32,17 @@ class IndexView(View):  # url vacia
         return render(request, self.template, self.context)  # manda a devolver la pagina con las cosas que se le ordena
 
 
+class IndexViewAdvanced(View):  # url vacia
+    context = {}  # lo que se va a enviar al template
+    template = 'dashboard/avanzado.html'  # template de pagina web
+
+    def get(self, request, *args, **kwargs):  # mostrar una pagina se hace con get; post para recibir input del usuario
+        self.context['files'] = FileUpload.objects.order_by('-created')[
+                                :5]  # trae todos los objetos del timpo FileUpload
+        # y los ordena por campo created (una fecha)
+        return render(request, self.template, self.context)  # manda a devolver la pagina con las cosas que se le ordena
+
+
 class ScheduleView(View):
     context = {}
     template = 'dashboard/results.html'
@@ -72,9 +83,16 @@ class ScheduleView(View):
                                   date=programming_date,
                                   nrooms=request.POST['nrooms'],
                                   ndays=request.POST['ndays'],
-                                  ndaysAM=request.POST['ndaysAM'],
-                                  hoursam=request.POST['hoursam'],
-                                  hourspm=request.POST['hourspm'],
+                                  dia1AM=request.POST['dia1AM'],
+                                  dia2AM=request.POST['dia2AM'],
+                                  dia3AM=request.POST['dia3AM'],
+                                  dia4AM=request.POST['dia4AM'],
+                                  dia5AM=request.POST['dia5AM'],
+                                  dia1PM=request.POST['dia1PM'],
+                                  dia2PM=request.POST['dia2PM'],
+                                  dia3PM=request.POST['dia3PM'],
+                                  dia4PM=request.POST['dia4PM'],
+                                  dia5PM=request.POST['dia5PM'],
                                   )
 
             start_time = time.time()
@@ -189,12 +207,18 @@ class PacientesView(View):
         if not especialidad:
             especialidad = especialidades.first()['especialidad']
 
-        schedule = Schedule.objects.filter(file=file, especialidad=especialidad)
-        ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion') \
+        schedule = Schedule.objects.filter(file=file,
+                                           especialidad=especialidad)
+        ingresos_duracion = Ingreso.objects.filter(file=file,
+                                                   especialidad=especialidad,
+                                                   prioridad=1).values('duracion') \
             .aggregate(time=Sum('duracion'), count=Count('duracion'))
 
-        ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad).order_by(
+
+        ingresos = Ingreso.objects.filter(file=file, 
+                                          especialidad=especialidad).order_by(
             '-orden')
+
         ingresos = ingresos.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
 
         tiempo_especialidad = 0
@@ -203,10 +227,15 @@ class PacientesView(View):
                 tiempo_especialidad = e['time']
                 break
 
-        ingresos_prioritarios = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).order_by(
+        ingresos_prioritarios = Ingreso.objects.filter(file=file, 
+                                                       especialidad=especialidad,
+                                                       prioridad=1).order_by(
             '-orden')
-        ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=0).order_by(
+        ingresos = Ingreso.objects.filter(file=file, 
+                                          especialidad=especialidad, 
+                                          prioridad=0).order_by(
             '-orden')
+
 
         tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
 
@@ -252,21 +281,33 @@ class PacientesViewFirstTime(View):
 
         if True:  # itera las lista prioritaria para tooodas las especialidades
             for e in especialidades:
-                schedule = Schedule.objects.filter(file=file, especialidad=e['especialidad'])
-                ingresoss = Ingreso.objects.filter(file=file, especialidad=e['especialidad']).order_by(
+
+                schedule = Schedule.objects.filter(file=file, 
+                                                   especialidad=e['especialidad'])
+                ingresoss = Ingreso.objects.filter(file=file, 
+                                                   especialidad=e['especialidad']).order_by(
                     '-orden')
+
                 ingresoss = ingresoss.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
-                ingresoss_prioritarios = Ingreso.objects.filter(file=file, especialidad=e['especialidad'],
+                ingresoss_prioritarios = Ingreso.objects.filter(file=file,
+                                                                especialidad=e['especialidad'],
                                                                 prioridad=1).order_by(
                     '-orden')
                 assign_list2(file, schedule, ingresoss, ingresoss_prioritarios)
 
-        schedule = Schedule.objects.filter(file=file, especialidad=especialidad)
-        ingresos_duracion = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).values('duracion') \
-            .aggregate(time=Sum('duracion'), count=Count('duracion'))
+        schedule = Schedule.objects.filter(file=file,
+                                           especialidad=especialidad)
+        ingresos_duracion = Ingreso.objects.filter(file=file,
+                                                   especialidad=especialidad,
+                                                   prioridad=1).values('duracion') \
+            .aggregate(time=Sum('duracion'),
+                       count=Count('duracion'))
 
-        ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad).order_by(
+
+        ingresos = Ingreso.objects.filter(file=file, 
+                                          especialidad=especialidad).order_by(
             '-orden')
+
         ingresos = ingresos.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
 
         tiempo_especialidad = 0
@@ -275,10 +316,16 @@ class PacientesViewFirstTime(View):
                 tiempo_especialidad = e['time']
                 break
 
-        ingresos_prioritarios = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).order_by(
+
+        ingresos_prioritarios = Ingreso.objects.filter(file=file, 
+                                                       especialidad=especialidad,
+                                                       prioridad=1).order_by(
             '-orden')
-        ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=0).order_by(
+        ingresos = Ingreso.objects.filter(file=file, 
+                                          especialidad=especialidad, 
+                                          prioridad=0).order_by(
             '-orden')
+
 
         tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
 
@@ -309,24 +356,35 @@ def updateSchedule(request):
             return HttpResponse(_('Invalid request!'))
 
         try:
-            schedule1 = Schedule.objects.get(file=file, room=room1, day=day1, bloque=bloque1)
+            schedule1 = Schedule.objects.get(file=file,
+                                             room=room1,
+                                             day=day1,
+                                             bloque=bloque1)
             id_initial = schedule1.pk
             s1duration = schedule1.initial_duration
-            schedule2 = Schedule.objects.filter(file=file, room=room2, day=day2, bloque=bloque2)
+            schedule2 = Schedule.objects.filter(file=file,
+                                                room=room2,
+                                                day=day2,
+                                                bloque=bloque2)
 
             if schedule2:
                 s2duration = schedule2.first().initial_duration
-                schedule2.update(room=room1, day=day1, bloque=bloque1, initial_duration=s1duration,
+                schedule2.update(room=room1,
+                                 day=day1,
+                                 bloque=bloque1,
+                                 initial_duration=s1duration,
                                  remaining_duration=s1duration)
 
-
             if id_initial:
-                Schedule.objects.filter(pk=id_initial).update(room=room2, day=day2, bloque=bloque2,
+                Schedule.objects.filter(pk=id_initial).update(room=room2,
+                                                              day=day2,
+                                                              bloque=bloque2,
                                                               initial_duration=s2duration,
                                                               remaining_duration=s2duration)
 
             especialidades = list(Schedule.objects.filter(file=file).values('especialidad'). \
-                annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by('-time'))
+                annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by(
+                '-time'))
 
         except:
             return HttpResponse(_('Not found or cannot update!'))
@@ -358,11 +416,17 @@ def updatePrioridad(request):
                 ingreso.prioridad = 0
             ingreso.save()
 
-            schedule = Schedule.objects.filter(file=file, especialidad=especialidad)
+            schedule = Schedule.objects.filter(file=file,
+                                               especialidad=especialidad)
 
-            ingresos_prioritarios = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=1).order_by(
+
+            ingresos_prioritarios = Ingreso.objects.filter(file=file, 
+                                                           especialidad=especialidad, 
+                                                           prioridad=1).order_by(
                 '-orden')
-            ingresos = Ingreso.objects.filter(file=file, especialidad=especialidad, prioridad=0).order_by(
+            ingresos = Ingreso.objects.filter(file=file, 
+                                              especialidad=especialidad, 
+                                              prioridad=0).order_by(
                 '-orden')
 
             tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
@@ -373,6 +437,7 @@ def updatePrioridad(request):
         return JsonResponse(tiempo_restante, safe=False)
 
     return HttpResponse(_('No post!'))
+
 
 def tiempoCompleto(request):
     if request.method == 'POST':
@@ -387,7 +452,8 @@ def tiempoCompleto(request):
 
         try:
             boolean = '1'
-            ingreso = Ingreso.objects.get(file=file, pk=int(idp))
+            ingreso = Ingreso.objects.get(file=file,
+                                          pk=int(idp))
             if (float(ingreso.duracion) > float(time)):
                 boolean = '0'
 
@@ -431,38 +497,28 @@ def median_value(queryset, term):
 def export_xls(request, id_result):
     if request.method == 'GET':
         try:
-            #id_result = request.GET.get('id_result', None)
+            # id_result = request.GET.get('id_result', None)
             file = FileUpload.objects.get(pk=id_result)
         except:
             return HttpResponse(_('Invalid request!'))
         try:
             response = HttpResponse(content_type='application/ms-excel')
             response['Content-Disposition'] = 'attachment; filename="Lista_de_Pacientes.xls"'
-
             especialidades = Schedule.objects.filter(file=file).values('especialidad').distinct()
-
             wb = xlwt.Workbook(encoding='utf-8')
-
             for e in especialidades:
                 titulo = e['especialidad']
                 ws = wb.add_sheet(titulo)
-
-                # Sheet header, first row
-
                 row_num = 0
-
                 font_style = xlwt.XFStyle()
                 font_style.font.bold = True
 
+
                 columns = ['RUN', 'OPERACION', 'PUNTAJE', 'DURACION',
                            '', '', 'RUN', 'OPERACION', 'PUNTAJE', 'DURACION', ]
-
                 for col_num in range(len(columns)):
                     ws.write(row_num, col_num, columns[col_num], font_style)
-
-                # Sheet body, remaining rows
                 font_style = xlwt.XFStyle()
-
                 rows_prior = Ingreso.objects.filter(file=file,
                                                     especialidad=e['especialidad'],
                                                     prioridad=1).values_list('run',
@@ -473,7 +529,6 @@ def export_xls(request, id_result):
                     row_num += 1
                     for col_num in range(4):
                         ws.write(row_num, col_num, row[col_num], font_style)
-
                 rows_no_prior = Ingreso.objects.filter(file=file,
                                                        especialidad=e['especialidad'],
                                                        prioridad=0).values_list('run',
@@ -493,67 +548,138 @@ def export_xls(request, id_result):
 
     return HttpResponse(_('No post!'))
 
+
 def export_xls2(request, id_result):
     if request.method == 'GET':
         try:
-            #id_result = request.GET.get('id_result', None)
             file = FileUpload.objects.get(pk=id_result)
         except:
             return HttpResponse(_('Invalid request!'))
         try:
             response = HttpResponse(content_type='application/ms-excel')
-            response['Content-Disposition'] = 'attachment; filename="Calendario.xls"'
 
-            especialidades = Schedule.objects.filter(file=file).values('especialidad').distinct()
+            response['Content-Disposition'] = 'attachment; filename="Programación.xls"'
 
+
+            dias = Schedule.objects.filter(file=file).values('day').distinct()
+            salas = Schedule.objects.filter(file=file).values('room').distinct()
             wb = xlwt.Workbook(encoding='utf-8')
-
-            for e in especialidades:
-                titulo = e['especialidad']
+            font_style = xlwt.XFStyle()
+            for d in dias:
+                titulo = d['day']
                 ws = wb.add_sheet(titulo)
 
-                # Sheet header, first row
+                ncol = 1
+                for s in salas:
+                    nrow = 0
+                    ws.write(nrow, ncol-1, '-', font_style)
+                    ws.write(nrow, ncol, 'Sala '+str(s['room']), font_style)
+                    ws.write(nrow, ncol+1, '-', font_style)
+                    nrow += 2
+                    especialidades_AM = Schedule.objects.filter(file=file,
+                                                                day=d['day'],
+                                                                bloque='AM',
+                                                                room=s['room']).values('especialidad').distinct()
+                    ws.write(nrow, ncol-1, '-', font_style)
+                    ws.write(nrow, ncol, 'Bloque AM', font_style)
+                    ws.write(nrow, ncol+1, '-', font_style)
+                    nrow += 1
+                    for e in especialidades_AM:
+                        ws.write(nrow, ncol - 1, '-', font_style)
+                        ws.write(nrow, ncol, e['especialidad'], font_style)
+                        ws.write(nrow, ncol + 1, '-', font_style)
+                        nrow += 1
+                        schedule = Schedule.objects.filter(file=file,
+                                                           especialidad=e['especialidad'],
+                                                           day=d['day'],
+                                                           bloque='AM',
+                                                           room=s['room'])
+                        for ss in schedule:
+                            if ss.bloque_extendido == 0:
+                                ws.write(nrow, ncol-1, 'Rut', font_style)
+                                ws.write(nrow, ncol, 'Prestación', font_style)
+                                ws.write(nrow, ncol+1, 'Duración (min)', font_style)
+                                nrow += 1
+                                rows_prior = Ingreso.objects.filter(file=file,
+                                                                    especialidad=e['especialidad'],
+                                                                    prioridad=1).order_by(
+                                    '-tiempoespera')
+                                for row in rows_prior:
+                                    if ss in row.schedule.all():
+                                        ws.write(nrow, ncol-1, row.run, font_style)
+                                        ws.write(nrow, ncol, row.prestacion, font_style)
+                                        ws.write(nrow, ncol+1, row.duracion, font_style)
+                                        nrow += 1
+                            elif ss.bloque_extendido == 1:
+                                ws.write(nrow, ncol - 1, '-', font_style)
+                                ws.write(nrow, ncol, 'BLOQUE EXTENDIDO', font_style)
+                                ws.write(nrow, ncol + 1, '-', font_style)
+                                nrow += 1
+                                ws.write(nrow, ncol - 1, 'Rut', font_style)
+                                ws.write(nrow, ncol, 'Prestación', font_style)
+                                ws.write(nrow, ncol + 1, 'Duración (min)', font_style)
+                                nrow += 1
+                                rows_prior = Ingreso.objects.filter(file=file,
+                                                                    especialidad=e['especialidad'],
+                                                                    prioridad=1).order_by(
+                                    '-tiempoespera')
+                                for row in rows_prior:
+                                    if ss in row.schedule.all():
+                                        ws.write(nrow, ncol - 1, row.run, font_style)
+                                        ws.write(nrow, ncol, row.prestacion, font_style)
+                                        ws.write(nrow, ncol + 1, row.duracion, font_style)
+                                        nrow += 1
+                        nrow += 1
+                    especialidades_PM = Schedule.objects.filter(file=file,
+                                                                day=d['day'],
+                                                                bloque='PM',
+                                                                room=s['room']).values('especialidad').distinct()
+                    ws.write(nrow, ncol-1, '-', font_style)
+                    ws.write(nrow, ncol, 'Bloque PM', font_style)
+                    ws.write(nrow, ncol+1, '-', font_style)
+                    nrow += 1
+                    for e in especialidades_PM:
+                        ws.write(nrow, ncol - 1, '-', font_style)
+                        ws.write(nrow, ncol, e['especialidad'], font_style)
+                        ws.write(nrow, ncol + 1, '-', font_style)
+                        nrow += 1
+                        schedule = Schedule.objects.filter(file=file,
+                                                           especialidad=e['especialidad'],
+                                                           day=d['day'],
+                                                           bloque='PM',
+                                                           room=s['room'])
+                        for ss in schedule:
+                            if ss.bloque_extendido == 0:
+                                ws.write(nrow, ncol - 1, 'Rut', font_style)
+                                ws.write(nrow, ncol, 'Prestación', font_style)
+                                ws.write(nrow, ncol + 1, 'Duración (min)', font_style)
+                                nrow += 1
+                                rows_prior = Ingreso.objects.filter(file=file,
+                                                                    especialidad=e['especialidad'],
+                                                                    prioridad=1).order_by(
+                                    '-tiempoespera')
+                                for row in rows_prior:
+                                    if ss in row.schedule.all():
+                                        ws.write(nrow, ncol - 1, row.run, font_style)
+                                        ws.write(nrow, ncol, row.prestacion, font_style)
+                                        ws.write(nrow, ncol + 1, row.duracion, font_style)
+                                        nrow += 1
 
-                row_num = 0
+                            elif ss.bloque_extendido == 1:
+                                ws.write(nrow, ncol - 1, '-', font_style)
+                                ws.write(nrow, ncol, 'BLOQUE EXTENDIDO', font_style)
+                                ws.write(nrow, ncol + 1, '-', font_style)
+                                nrow += 1
+                                ws.write(nrow, ncol - 1, '', font_style)
+                                ws.write(nrow, ncol, '', font_style)
+                                ws.write(nrow, ncol + 1, '', font_style)
+                                nrow += 1
+                        nrow += 1
+                    ncol += 4
 
-                font_style = xlwt.XFStyle()
-                font_style.font.bold = True
-
-                columns = ['RUN', 'OPERACION', 'TIEMPO_ESPERADO', 'DURACION',
-                           '', '', 'RUN', 'OPERACION', 'TIEMPO_ESPERADO', 'DURACION', ]
-
-                for col_num in range(len(columns)):
-                    ws.write(row_num, col_num, columns[col_num], font_style)
-
-                # Sheet body, remaining rows
-                font_style = xlwt.XFStyle()
-
-                rows_prior = Ingreso.objects.filter(file=file,
-                                                    especialidad=e['especialidad'],
-                                                    prioridad=1).values_list('run',
-                                                                             'prestacion',
-                                                                             'orden',
-                                                                             'duracion').order_by('-orden')
-                for row in rows_prior:
-                    row_num += 1
-                    for col_num in range(4):
-                        ws.write(row_num, col_num, row[col_num], font_style)
-
-                rows_no_prior = Ingreso.objects.filter(file=file,
-                                                       especialidad=e['especialidad'],
-                                                       prioridad=0).values_list('run',
-                                                                                'prestacion',
-                                                                                'orden',
-                                                                                'duracion').order_by('-orden')
-                row_num = 0
-                for row in rows_no_prior:
-                    row_num += 1
-                    for col_num in range(4):
-                        ws.write(row_num, col_num + 6, row[col_num], font_style)
             wb.save(response)
 
         except:
             return HttpResponse(_('Not found or cannot update!'))
         return response
-
     return HttpResponse(_('No post!'))
