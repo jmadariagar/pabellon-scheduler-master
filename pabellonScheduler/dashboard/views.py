@@ -93,6 +93,11 @@ class ScheduleView(View):
                                   dia3PM=request.POST['dia3PM'],
                                   dia4PM=request.POST['dia4PM'],
                                   dia5PM=request.POST['dia5PM'],
+                                  alfa_at_cerr=request.POST['alfa_at_cerr'],
+                                  alfa_ges = request.POST['alfa_ges'],
+                                  alfa_reprog = request.POST['alfa_reprog'],
+                                  alfa_clinic_prior = request.POST['alfa_clinic_prior'],
+                                  alfa_tiempo_espera = request.POST['alfa_tiempo_espera'],
                                   )
 
             start_time = time.time()
@@ -506,8 +511,10 @@ def export_xls(request, id_result):
             response['Content-Disposition'] = 'attachment; filename="Lista_de_Pacientes.xls"'
             especialidades = Schedule.objects.filter(file=file).values('especialidad').distinct()
             wb = xlwt.Workbook(encoding='utf-8')
+
             for e in especialidades:
-                titulo = e['especialidad']
+                print(len(e['especialidad']))
+                titulo = e['especialidad'][0:22]
                 ws = wb.add_sheet(titulo)
                 row_num = 0
                 font_style = xlwt.XFStyle()
