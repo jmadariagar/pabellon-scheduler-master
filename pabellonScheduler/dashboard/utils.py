@@ -15,7 +15,8 @@ from itertools import cycle
 # funciones que se usen en views.py
 
 def process_data(file, programming_date):
-
+    auxiliary_file = file
+    file = file.file
     # Leo excel
     Datos = pd.read_excel(file)
 
@@ -26,7 +27,7 @@ def process_data(file, programming_date):
 
 
     columnsUploaded =  list(Datos.columns.values)
-    columnsNeeded = ['RUN', 'PRESTA_MIN', 'PRESTA_EST', 'F_ENTRADA']
+    columnsNeeded = ['RUN', 'PRESTA_MIN', 'PRESTA_EST', 'F_ENTRADA', 'AT_CERR', 'GES', 'REPROG', 'CLINIC_PRIOR']
 
     missingColumns = [c for c in columnsNeeded if c not in columnsUploaded]
 
@@ -63,6 +64,12 @@ def process_data(file, programming_date):
 
         waiting_time = (programming_date - Datos.at[row, 'F_ENTRADA']).days
         Datos.at[row, 'Waiting_Time'] = waiting_time
+
+    Datos['ORDEN'] = int(auxiliary_file.alfa_at_cerr) * Datos['AT_CERR'] / max(Datos['AT_CERR']) + \
+                     int(auxiliary_file.alfa_ges) * Datos['GES'] / max(Datos['GES']) + \
+                     int(auxiliary_file.alfa_reprog) * Datos['REPROG'] / max(Datos['REPROG']) + \
+                     int(auxiliary_file.alfa_clinic_prior) * Datos['CLINIC_PRIOR']  + \
+                     int(auxiliary_file.alfa_tiempo_espera) * Datos['Waiting_Time'] / max(Datos['Waiting_Time'])
 
     Datos.reset_index(drop=True, inplace=True)
     Datos.drop_duplicates(['ID'], inplace=True)
@@ -236,7 +243,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
             pabellones = R
             for s in specialties:
                 cola = queue[queue["Service"] == s]
-                Max_Duracion = cola[cola["Waiting_Time"] == max(cola["Waiting_Time"])]["MAIN_DURATION"][0]
+                Max_Duracion = cola[cola["ORDEN"] == max(cola["ORDEN"])]["MAIN_DURATION"][0]
                 if Max_Duracion >= 300 and pabellones > 0 and s not in specialties3y5:
                     specialties5hrs.append([s, t])
                     specialties3y5.append(s)
@@ -247,7 +254,6 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
                     pabellones -= 1
 
         specialties_new = list(set(specialties) - set(specialties3y5))
-
     H = 0
     for t in times:
         H += R * (pabellon_disponible_AM[t] * q_AM(t) + pabellon_disponible_PM[t] * q_PM(t))
@@ -346,13 +352,16 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
 
     roundLowSwitch = True
 
+    lcoefici = 10
+    ucoefici = 5
+    # coeficientes para suavizar las restricciones
     if roundLowSwitch:
         roundLowConstr = {
             s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
                                                   sense=plp.LpConstraintGE,
-                                                  rhs=lowerBounds[s],
+                                                  rhs=max(0, lowerBounds[s] - lcoefici),
                                                   name="roundLow_{0}".format(s)))
-            for s in specialties_new}
+            for s in specialties}
 
     roundUpSwitch = True
 
@@ -360,9 +369,9 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         roundUpConstr = {
             s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
                                                   sense=plp.LpConstraintLE,
-                                                  rhs=upperBounds[s],
+                                                  rhs=ucoefici + upperBounds[s],
                                                   name="roundUp_{0}".format(s)))
-            for s in specialties_new}
+            for s in specialties}
 
     sumAMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_AM[s, t] for s in specialties),
                                                          sense=plp.LpConstraintEQ,
@@ -396,6 +405,15 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
                                                          rhs=1,
                                                          name="Restric5h2_{0}".format(i)))
                    for i in range(len(specialties5hrs))}
+
+    restric_one = 1 #esta es la restrccion para que cada especialidad reciba al menos un bloque
+    if restric_one:
+        sumBConstr = {
+            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(1 * b_AM[s, t] + 1 * b_PM[s, t] for t in times),
+                                                  sense=plp.LpConstraintGE,
+                                                  rhs=1,
+                                                  name="roundLow2_{0}".format(s)))
+            for s in specialties}
 
     objective = plp.lpSum(w[s] * (q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t]) for s in specialties for t in times)
 

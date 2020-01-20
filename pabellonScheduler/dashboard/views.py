@@ -79,7 +79,9 @@ class ScheduleView(View):
 
             # request es el objetoi que contiene todas las cosas que vienen del request del usuario (cuando ejecuta la accion)
             # variables definidas en el html
-            new_file = FileUpload(file=request.FILES['file'], date=programming_date, nrooms=request.POST['nrooms'],
+            new_file = FileUpload(file=request.FILES['file'],
+                                  date=programming_date,
+                                  nrooms=request.POST['nrooms'],
                                   ndays=request.POST['ndays'],
                                   dia1AM=request.POST['dia1AM'],
                                   dia2AM=request.POST['dia2AM'],
@@ -94,7 +96,7 @@ class ScheduleView(View):
                                   )
 
             start_time = time.time()
-            Datos, missingColumns = process_data(new_file.file, programming_date)  # funcion definida en utils.py.
+            Datos, missingColumns = process_data(new_file, programming_date)  # funcion definida en utils.py.
 
             if missingColumns:
                 self.template = 'dashboard/index.html'
@@ -157,8 +159,8 @@ class ListaView(View):
             return render(request, template, self.context)
 
         schedule = Schedule.objects.filter(file=file)
-        ingresos = Ingreso.objects.filter(file=file, prioridad=0).order_by('-tiempoespera')
-        ingresos_prioritarios = Ingreso.objects.filter(file=file, prioridad=1).order_by('-tiempoespera')
+        ingresos = Ingreso.objects.filter(file=file, prioridad=0).order_by('-orden')
+        ingresos_prioritarios = Ingreso.objects.filter(file=file, prioridad=1).order_by('-orden')
 
         assign_list(file, schedule, ingresos, ingresos_prioritarios)
 
@@ -212,9 +214,11 @@ class PacientesView(View):
                                                    prioridad=1).values('duracion') \
             .aggregate(time=Sum('duracion'), count=Count('duracion'))
 
-        ingresos = Ingreso.objects.filter(file=file,
+
+        ingresos = Ingreso.objects.filter(file=file, 
                                           especialidad=especialidad).order_by(
-            '-tiempoespera')
+            '-orden')
+
         ingresos = ingresos.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
 
         tiempo_especialidad = 0
@@ -223,14 +227,15 @@ class PacientesView(View):
                 tiempo_especialidad = e['time']
                 break
 
-        ingresos_prioritarios = Ingreso.objects.filter(file=file,
+        ingresos_prioritarios = Ingreso.objects.filter(file=file, 
                                                        especialidad=especialidad,
                                                        prioridad=1).order_by(
-            '-tiempoespera')
-        ingresos = Ingreso.objects.filter(file=file,
-                                          especialidad=especialidad,
+            '-orden')
+        ingresos = Ingreso.objects.filter(file=file, 
+                                          especialidad=especialidad, 
                                           prioridad=0).order_by(
-            '-tiempoespera')
+            '-orden')
+
 
         tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
 
@@ -276,16 +281,18 @@ class PacientesViewFirstTime(View):
 
         if True:  # itera las lista prioritaria para tooodas las especialidades
             for e in especialidades:
-                schedule = Schedule.objects.filter(file=file,
+
+                schedule = Schedule.objects.filter(file=file, 
                                                    especialidad=e['especialidad'])
-                ingresoss = Ingreso.objects.filter(file=file,
+                ingresoss = Ingreso.objects.filter(file=file, 
                                                    especialidad=e['especialidad']).order_by(
-                    '-tiempoespera')
+                    '-orden')
+
                 ingresoss = ingresoss.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
                 ingresoss_prioritarios = Ingreso.objects.filter(file=file,
                                                                 especialidad=e['especialidad'],
                                                                 prioridad=1).order_by(
-                    '-tiempoespera')
+                    '-orden')
                 assign_list2(file, schedule, ingresoss, ingresoss_prioritarios)
 
         schedule = Schedule.objects.filter(file=file,
@@ -296,9 +303,11 @@ class PacientesViewFirstTime(View):
             .aggregate(time=Sum('duracion'),
                        count=Count('duracion'))
 
-        ingresos = Ingreso.objects.filter(file=file,
+
+        ingresos = Ingreso.objects.filter(file=file, 
                                           especialidad=especialidad).order_by(
-            '-tiempoespera')
+            '-orden')
+
         ingresos = ingresos.filter(~Q(prioridad=1)).exclude(duracion__isnull=True)
 
         tiempo_especialidad = 0
@@ -307,14 +316,16 @@ class PacientesViewFirstTime(View):
                 tiempo_especialidad = e['time']
                 break
 
-        ingresos_prioritarios = Ingreso.objects.filter(file=file,
+
+        ingresos_prioritarios = Ingreso.objects.filter(file=file, 
                                                        especialidad=especialidad,
                                                        prioridad=1).order_by(
-            '-tiempoespera')
-        ingresos = Ingreso.objects.filter(file=file,
-                                          especialidad=especialidad,
+            '-orden')
+        ingresos = Ingreso.objects.filter(file=file, 
+                                          especialidad=especialidad, 
                                           prioridad=0).order_by(
-            '-tiempoespera')
+            '-orden')
+
 
         tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
 
@@ -408,14 +419,15 @@ def updatePrioridad(request):
             schedule = Schedule.objects.filter(file=file,
                                                especialidad=especialidad)
 
-            ingresos_prioritarios = Ingreso.objects.filter(file=file,
-                                                           especialidad=especialidad,
+
+            ingresos_prioritarios = Ingreso.objects.filter(file=file, 
+                                                           especialidad=especialidad, 
                                                            prioridad=1).order_by(
-                '-tiempoespera')
-            ingresos = Ingreso.objects.filter(file=file,
-                                              especialidad=especialidad,
+                '-orden')
+            ingresos = Ingreso.objects.filter(file=file, 
+                                              especialidad=especialidad, 
                                               prioridad=0).order_by(
-                '-tiempoespera')
+                '-orden')
 
             tiempo_restante = assign_list3(file, schedule, ingresos, ingresos_prioritarios)
 
@@ -468,6 +480,7 @@ def save_lista_espera(content, file):
                             fechaingreso=item['F_ENTRADA'],
                             tiempoespera=item['Waiting_Time'],
                             duracion=item['MAIN_DURATION'],
+                            orden=item['ORDEN'],
                             file=file)
         operacion.save()
 
@@ -499,8 +512,10 @@ def export_xls(request, id_result):
                 row_num = 0
                 font_style = xlwt.XFStyle()
                 font_style.font.bold = True
-                columns = ['RUN', 'OPERACION', 'TIEMPO_ESPERADO', 'DURACION',
-                           '', '', 'RUN', 'OPERACION', 'TIEMPO_ESPERADO', 'DURACION', ]
+
+
+                columns = ['RUN', 'OPERACION', 'PUNTAJE', 'DURACION',
+                           '', '', 'RUN', 'OPERACION', 'PUNTAJE', 'DURACION', ]
                 for col_num in range(len(columns)):
                     ws.write(row_num, col_num, columns[col_num], font_style)
                 font_style = xlwt.XFStyle()
@@ -508,8 +523,8 @@ def export_xls(request, id_result):
                                                     especialidad=e['especialidad'],
                                                     prioridad=1).values_list('run',
                                                                              'prestacion',
-                                                                             'tiempoespera',
-                                                                             'duracion').order_by('-tiempoespera')
+                                                                             'orden',
+                                                                             'duracion').order_by('-orden')
                 for row in rows_prior:
                     row_num += 1
                     for col_num in range(4):
@@ -518,8 +533,8 @@ def export_xls(request, id_result):
                                                        especialidad=e['especialidad'],
                                                        prioridad=0).values_list('run',
                                                                                 'prestacion',
-                                                                                'tiempoespera',
-                                                                                'duracion').order_by('-tiempoespera')
+                                                                                'orden',
+                                                                                'duracion').order_by('-orden')
                 row_num = 0
                 for row in rows_no_prior:
                     row_num += 1
@@ -542,7 +557,9 @@ def export_xls2(request, id_result):
             return HttpResponse(_('Invalid request!'))
         try:
             response = HttpResponse(content_type='application/ms-excel')
+
             response['Content-Disposition'] = 'attachment; filename="Programación.xls"'
+
 
             dias = Schedule.objects.filter(file=file).values('day').distinct()
             salas = Schedule.objects.filter(file=file).values('room').distinct()
@@ -551,6 +568,7 @@ def export_xls2(request, id_result):
             for d in dias:
                 titulo = d['day']
                 ws = wb.add_sheet(titulo)
+
                 ncol = 1
                 for s in salas:
                     nrow = 0
@@ -658,6 +676,7 @@ def export_xls2(request, id_result):
                                 nrow += 1
                         nrow += 1
                     ncol += 4
+
             wb.save(response)
 
         except:

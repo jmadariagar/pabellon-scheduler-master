@@ -18,6 +18,11 @@ class FileUpload(models.Model): #el excel que se sube
     dia3PM = models.IntegerField(null=True, default=3)
     dia4PM = models.IntegerField(null=True, default=3)
     dia5PM = models.IntegerField(null=True, default=2)
+    alfa_at_cerr = models.IntegerField(null=True, default=10000)
+    alfa_ges = models.IntegerField(null=True, default=1000)
+    alfa_reprog = models.IntegerField(null=True, default=100)
+    alfa_clinic_prior = models.IntegerField(null=True, default=10)
+    alfa_tiempo_espera = models.IntegerField(null=True, default=1)
 
 class Schedule(models.Model): #bloque
     especialidad = models.CharField(null=True, max_length=100)
@@ -38,6 +43,7 @@ class Ingreso(models.Model): # cada entrada/persona que espera intervencion, del
     tiempoespera = models.IntegerField(null=True)
     duracion = models.IntegerField(null=True)
     prioridad = models.IntegerField(null=True, default=0)
+    orden = models.FloatField(null=True, default=0)
     schedule = models.ManyToManyField(Schedule)
     file = models.ForeignKey(FileUpload, on_delete=models.CASCADE)
 
