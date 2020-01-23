@@ -20,51 +20,51 @@
               <h6 class="c-grey-900">Distribución de Bloques</h6>
               <div id="redips-drag" class="mT-30">
                 <table class="table table-striped">
-                  <thead class="thead-dark">
-                  <tr>
-                    <th scope="col" class="redips-only">salas \ dias</th>
-                    {% for d in days %}
-                    <th scope="col" class="redips-only">{{d.day}}</th>
-                    {% endfor %}
-                  </tr>
-                  </thead>
-                  <tbody>
-                  {% for r in rooms %}
-                  <tr class="table-primary">
-                    <td class="redips-only">Sala {{r.room}} AM</td>
-                    {% for d in days %}
-                    <td>
+                  <table class="table table-striped">
+                    <thead class="thead-dark">
+                    <tr>
+                      <th scope="col" class="redips-only">salas \ dias</th>
+                      {% for d in days %}
+                      <th scope="col" class="redips-only">{{d.day}}</th>
+                      {% endfor %}
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for r in rooms %}
+                    <tr class="table-primary">
+                      <td class="redips-only">Sala {{r.room}} AM</td>
+                      {% for d in days %}
+
                       {% for s in schedule %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
-                      <div class="redips-drag ">{{s.especialidad}}</div>
-                      {% endif %}
-                      {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
-                      <div class="redips-drag"><B>{{s.especialidad}}
-                      BLOQUE EXTENDIDO</B></div> 
-                      {% endif %}
+                      <td>
+                        <div class="redips-drag ">{{ s.especialidad }}</div>
+                        {% endif %}
+                        {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
+                      <td class=" align-middle bg-secondary" rowspan='2'>
+                        <div class="redips-drag"><B>{{ s.especialidad }}
+                          BLOQUE EXTENDIDO</B></div>
+                        {% endif %}
+                      </td>
                       {% endfor %}
-                    </td>
-                    {% endfor %}
-                  </tr>
-                  <tr class="table-success">
-                    <td class="redips-only">Sala {{r.room}} PM</td>
-                    {% for d in days %}
-                    <td>
+                      {% endfor %}
+                    </tr>
+                    <tr class="table-success">
+                      <td class="redips-only">Sala {{r.room}} PM</td>
+                      {% for d in days %}
                       {% for s in schedule %}
+
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
-                      <div class="redips-drag">{{ s.especialidad }}</div>
-                      {% endif %}
-                      {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 1%}
-                      <div class="redips-drag" ><B>{{ s.especialidad }}
-                      BLOQUE EXTENDIDO</B></div>
-                      {% endif %}
+                      <td>
+                        <div class="redips-drag">{{ s.especialidad }}</div>
+                        {% endif %}
+                      </td>
                       {% endfor %}
-                    </td>
+                      {% endfor %}
+                    </tr>
                     {% endfor %}
-                  </tr>
-                  {% endfor %}
-                  </tbody>
-                </table>
+                    </tbody>
+                  </table>
               </div>
               <br>
               <div class="row">
