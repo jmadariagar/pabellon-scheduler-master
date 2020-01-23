@@ -33,33 +33,32 @@
                   <tr class="table-primary">
                     <td class="redips-only">Sala {{r.room}} AM</td>
                     {% for d in days %}
+
+                    {% for s in schedule %}
+                    {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
                     <td>
-                      {% for s in schedule %}
-                      {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
                       <div class="redips-drag ">{{ s.especialidad }}</div>
                       {% endif %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
+                    <td class=" align-middle bg-secondary" rowspan='2'>
                       <div class="redips-drag"><B>{{ s.especialidad }}
-                      BLOQUE EXTENDIDO</B></div> 
+                        BLOQUE EXTENDIDO</B></div>
                       {% endif %}
-                      {% endfor %}
                     </td>
+                    {% endfor %}
                     {% endfor %}
                   </tr>
                   <tr class="table-success">
                     <td class="redips-only">Sala {{r.room}} PM</td>
                     {% for d in days %}
+                    {% for s in schedule %}
+
+                    {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
                     <td>
-                      {% for s in schedule %}
-                      {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
                       <div class="redips-drag">{{ s.especialidad }}</div>
                       {% endif %}
-                      {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 1%}
-                      <div class="redips-drag" ><B>{{ s.especialidad }}
-                      BLOQUE EXTENDIDO</B></div>
-                      {% endif %}
-                      {% endfor %}
                     </td>
+                    {% endfor %}
                     {% endfor %}
                   </tr>
                   {% endfor %}

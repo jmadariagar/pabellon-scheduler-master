@@ -499,6 +499,11 @@ def export_xls(request, id_result):
                 row_num = 0
                 font_style = xlwt.XFStyle()
                 font_style.font.bold = True
+                columns = ['Pacientes prioritarios', '', '', '',
+                           '', '', 'Lista de espera', '', '', '', ]
+                for col_num in range(len(columns)):
+                    ws.write(row_num, col_num, columns[col_num], font_style)
+                row_num = 1
                 columns = ['RUN', 'OPERACION', 'TIEMPO_ESPERADO', 'DURACION',
                            '', '', 'RUN', 'OPERACION', 'TIEMPO_ESPERADO', 'DURACION', ]
                 for col_num in range(len(columns)):
@@ -520,7 +525,7 @@ def export_xls(request, id_result):
                                                                                 'prestacion',
                                                                                 'tiempoespera',
                                                                                 'duracion').order_by('-tiempoespera')
-                row_num = 0
+                row_num = 1
                 for row in rows_no_prior:
                     row_num += 1
                     for col_num in range(4):
@@ -548,12 +553,15 @@ def export_xls2(request, id_result):
             salas = Schedule.objects.filter(file=file).values('room').distinct()
             wb = xlwt.Workbook(encoding='utf-8')
             font_style = xlwt.XFStyle()
+            font_style.font.bold = True
             for d in dias:
                 titulo = d['day']
-                ws = wb.add_sheet(titulo)
+                ws = wb.add_sheet(titulo, cell_overwrite_ok=True)
                 ncol = 1
                 for s in salas:
                     nrow = 0
+                    font_style = xlwt.XFStyle()
+                    font_style.font.bold = True
                     ws.write(nrow, ncol-1, '-', font_style)
                     ws.write(nrow, ncol, 'Sala '+str(s['room']), font_style)
                     ws.write(nrow, ncol+1, '-', font_style)
@@ -567,6 +575,8 @@ def export_xls2(request, id_result):
                     ws.write(nrow, ncol+1, '-', font_style)
                     nrow += 1
                     for e in especialidades_AM:
+                        font_style = xlwt.XFStyle()
+                        font_style.font.bold = True
                         ws.write(nrow, ncol - 1, '-', font_style)
                         ws.write(nrow, ncol, e['especialidad'], font_style)
                         ws.write(nrow, ncol + 1, '-', font_style)
@@ -588,15 +598,15 @@ def export_xls2(request, id_result):
                                     '-tiempoespera')
                                 for row in rows_prior:
                                     if ss in row.schedule.all():
+                                        font_style = xlwt.XFStyle()
                                         ws.write(nrow, ncol-1, row.run, font_style)
                                         ws.write(nrow, ncol, row.prestacion, font_style)
                                         ws.write(nrow, ncol+1, row.duracion, font_style)
                                         nrow += 1
                             elif ss.bloque_extendido == 1:
-                                ws.write(nrow, ncol - 1, '-', font_style)
-                                ws.write(nrow, ncol, 'BLOQUE EXTENDIDO', font_style)
-                                ws.write(nrow, ncol + 1, '-', font_style)
-                                nrow += 1
+                                ws.write(nrow-2, ncol, 'Bloque Extendido (AM y PM)', font_style)
+                                font_style = xlwt.XFStyle()
+                                font_style.font.bold = True
                                 ws.write(nrow, ncol - 1, 'Rut', font_style)
                                 ws.write(nrow, ncol, 'Prestación', font_style)
                                 ws.write(nrow, ncol + 1, 'Duración (min)', font_style)
@@ -607,6 +617,7 @@ def export_xls2(request, id_result):
                                     '-tiempoespera')
                                 for row in rows_prior:
                                     if ss in row.schedule.all():
+                                        font_style = xlwt.XFStyle()
                                         ws.write(nrow, ncol - 1, row.run, font_style)
                                         ws.write(nrow, ncol, row.prestacion, font_style)
                                         ws.write(nrow, ncol + 1, row.duracion, font_style)
@@ -616,11 +627,15 @@ def export_xls2(request, id_result):
                                                                 day=d['day'],
                                                                 bloque='PM',
                                                                 room=s['room']).values('especialidad').distinct()
+                    font_style = xlwt.XFStyle()
+                    font_style.font.bold = True
                     ws.write(nrow, ncol-1, '-', font_style)
                     ws.write(nrow, ncol, 'Bloque PM', font_style)
                     ws.write(nrow, ncol+1, '-', font_style)
                     nrow += 1
                     for e in especialidades_PM:
+                        font_style = xlwt.XFStyle()
+                        font_style.font.bold = True
                         ws.write(nrow, ncol - 1, '-', font_style)
                         ws.write(nrow, ncol, e['especialidad'], font_style)
                         ws.write(nrow, ncol + 1, '-', font_style)
@@ -642,20 +657,23 @@ def export_xls2(request, id_result):
                                     '-tiempoespera')
                                 for row in rows_prior:
                                     if ss in row.schedule.all():
+                                        font_style = xlwt.XFStyle()
                                         ws.write(nrow, ncol - 1, row.run, font_style)
                                         ws.write(nrow, ncol, row.prestacion, font_style)
                                         ws.write(nrow, ncol + 1, row.duracion, font_style)
                                         nrow += 1
-
                             elif ss.bloque_extendido == 1:
+                                ws.write(nrow-1, ncol - 1, '', font_style)
+                                ws.write(nrow-1, ncol, '', font_style)
+                                ws.write(nrow-1, ncol + 1, '', font_style)
+                                ws.write(nrow-2, ncol - 1, '', font_style)
+                                ws.write(nrow-2, ncol, '', font_style)
+                                ws.write(nrow-2, ncol + 1, '', font_style)
+                                font_style = xlwt.XFStyle()
+                                font_style.font.bold = True
                                 ws.write(nrow, ncol - 1, '-', font_style)
-                                ws.write(nrow, ncol, 'BLOQUE EXTENDIDO', font_style)
+                                ws.write(nrow, ncol, 'Cierre Bloque Extendido', font_style)
                                 ws.write(nrow, ncol + 1, '-', font_style)
-                                nrow += 1
-                                ws.write(nrow, ncol - 1, '', font_style)
-                                ws.write(nrow, ncol, '', font_style)
-                                ws.write(nrow, ncol + 1, '', font_style)
-                                nrow += 1
                         nrow += 1
                     ncol += 4
             wb.save(response)

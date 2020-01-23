@@ -559,6 +559,7 @@ def assign_list3(file, schedule, ingresos, ingresos_prioritarios):
     return max(schedule.order_by('remaining_duration').last().remaining_duration - u, 0)
 
 def digito_verificador(rut):
+    rut = str(rut)
     if '-' in rut:
         return rut
     else:

@@ -33,9 +33,10 @@
                   <tr class="table-primary">
                     <td class="redips-only">Sala {{r.room}} AM</td>
                     {% for d in days %}
-                    <td>
+
                       {% for s in schedule %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
+                    <td>
                       <div class="font-weight-bold">{{ s.especialidad}} <br>
                         Utilización: {{s.utilization}}%<br>
                         Tiempo restante: {{s.remaining_duration}} min</div>
@@ -45,6 +46,7 @@
                       {% endfor %}
                       {% endif %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
+                      <td class=" align-middle bg-secondary" rowspan='2'>
                       <div class="font-weight-bold" >{{ s.especialidad }} <br>
                         BLOQUE EXTENDIDO<br>
                         Utilización: {{s.utilization}}%<br>
@@ -53,17 +55,19 @@
                       <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
                         TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
+                      </td>
                       {% endif %}
                       {% endfor %}
-                    </td>
+
                     {% endfor %}
                   </tr>
                   <tr class="table-success">
                     <td class="redips-only">Sala {{r.room}} PM</td>
                     {% for d in days %}
-                    <td>
+
                       {% for s in schedule %}
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
+                    <td>
                       <div class="font-weight-bold">{{ s.especialidad }} <br>
                         Utilización: {{s.utilization}}%<br>
                         Tiempo restante: {{s.remaining_duration}} min</div>
@@ -71,22 +75,10 @@
                       <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
                         TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
-                      {% endif %}
-                      {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 1%}
-                      <div class="font-weight-bold">{{ s.especialidad }} <br>
-                        <br>
-                        <br>
-                        CONTINUACIÓN BLOQUE ANTERIOR<br>
-                        <br>
-                        <br>
-                      </div>
-                      {% for i in s.ingreso_set.all %}
-                      <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
-                        TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
-                      {% endfor %}
+                      </td>
                       {% endif %}
                       {% endfor %}
-                    </td>
+
                     {% endfor %}
                   </tr>
                   {% endfor %}
