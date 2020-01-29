@@ -6,94 +6,115 @@
 {{ block.super}}
 <link href="/static/drag.css" rel="stylesheet">
 {% endblock %}
-
+{% load get_variable %}
 {% block content %}
 <main class="main-content bgc-grey-100">
-  <div id="mainContent">
-    <div class="row gap-20 masonry pos-r">
-      <div class="masonry-sizer col-md-6"></div>
-      <div class="masonry-item w-100">
-        <div class="row gap-20">
-          <!-- #Toatl Visits ==================== -->
-          <div class="col-md-12">
-            <div class="bgc-white p-20 bd">
-              <h6 class="c-grey-900">Distribución de Bloques</h6>
-              <div id="redips-drag" class="mT-30">
-                <table class="table table-striped">
-                  <thead class="thead-dark">
-                  <tr>
-                    <th scope="col" class="redips-only">salas \ dias</th>
-                    {% for d in days %}
-                    <th scope="col" class="redips-only">{{d.day}}</th>
-                    {% endfor %}
-                  </tr>
-                  </thead>
-                  <tbody>
-                  {% for r in rooms %}
-                  <tr class="table-primary">
-                    <td class="redips-only">Sala {{r.room}} AM</td>
-                    {% for d in days %}
+    <div id="mainContent">
+        <div class="row gap-20 masonry pos-r">
+            <div class="masonry-sizer col-md-6"></div>
+            <div class="masonry-item w-100">
+                <div class="row gap-20">
+                    <!-- #Toatl Visits ==================== -->
+                    <div class="col-md-12">
+                        <div class="bgc-white p-20 bd">
+                            <h6 class="c-grey-900">Distribución de Bloques</h6>
+                            <div id="redips-drag" class="mT-30">
+                                <table class="table table-striped">
+                                    <thead class="thead-dark">
+                                    <tr>
+                                        <th scope="col" class="redips-only">salas \ dias</th>
+                                        {% for d in days %}
+                                        <th scope="col" class="redips-only">{{d.day}}</th>
+                                        {% endfor %}
+                                    </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for r in rooms %}
+                                    <tr class="table-primary">
+                                        <td class="redips-only">Sala {{r.room}} AM</td>
+                                        {% for d in days %}
+                                        {% set_global_context 'varaux' '0' %}
+                                        {% for s in schedule %}
 
-                    {% for s in schedule %}
-                    {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
-                    <td>
-                      <div class="redips-drag ">{{ s.especialidad }}</div>
-                      {% endif %}
-                      {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
-                    <td class=" align-middle bg-secondary" rowspan='2'>
-                      <div class="redips-drag"><B>{{ s.especialidad }}
-                        BLOQUE EXTENDIDO</B></div>
-                      {% endif %}
-                    </td>
-                    {% endfor %}
-                    {% endfor %}
-                  </tr>
-                  <tr class="table-success">
-                    <td class="redips-only">Sala {{r.room}} PM</td>
-                    {% for d in days %}
-                    {% for s in schedule %}
+                                        {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
+                                        {% set_global_context 'varaux' '1' %}
+                                        <td>
+                                            <div class="redips-drag ">{{ s.especialidad }}</div>
+                                        </td>
+                                        {% endif %}
 
-                    {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
-                    <td>
-                      <div class="redips-drag">{{ s.especialidad }}</div>
-                      {% endif %}
-                    </td>
-                    {% endfor %}
-                    {% endfor %}
-                  </tr>
-                  {% endfor %}
-                  </tbody>
-                </table>
-              </div>
-              <br>
-              <div class="row">
-                <div class="col-md-6">
-                  <h6 class="c-grey-900">Tiempos asignado por Especialidades</h6>
-                  <table id="tiempos_especialidades" class="table">
-                    <tr>
-                      <th>Especialidad</th>
-                      <th>Tiempo (hrs)</th>
-                    </tr>
-                    {% for e in especialidades %}
-                    <tr>
-                      <td>{{e.especialidad}}</td>
-                      <td>{{e.time_h}}</td>
-                    </tr>
-                    {% endfor %}
-                  </table>
+                                        {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
+                                        {% set_global_context 'varaux' '1' %}
+                                        <td class=" align-middle bg-secondary" rowspan='2'>
+                                            <div class="redips-drag"><B>{{ s.especialidad }}
+                                                BLOQUE EXTENDIDO</B></div>
+                                        </td>
+                                        {% endif %}
+                                        {% endfor %}
+
+                                        {% if varaux == '0' %}
+                                        <td>
+                                        </td>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tr>
+                                    <tr class="table-success">
+                                        <td class="redips-only">Sala {{r.room}} PM</td>
+                                        {% for d in days %}
+                                        {% set_global_context 'varaux' '0' %}
+                                        {% for s in schedule %}
+
+                                        {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
+                                        {% set_global_context 'varaux' '1' %}
+                                        <td>
+                                            <div class="redips-drag">{{ s.especialidad }}</div>
+                                        </td>
+                                        {% endif %}
+
+                                        {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 1%}
+                                        {% set_global_context 'varaux' '1' %}
+
+                                        {% endif %}
+                                        {% endfor %}
+                                        {% if varaux == '0' %}
+                                        <td>
+                                        </td>
+                                        {% endif %}
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <br>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="c-grey-900">Tiempos asignado por Especialidades</h6>
+                                    <table id="tiempos_especialidades" class="table">
+                                        <tr>
+                                            <th>Especialidad</th>
+                                            <th>Tiempo (hrs)</th>
+                                        </tr>
+                                        {% for e in especialidades %}
+                                        <tr>
+                                            <td>{{e.especialidad}}</td>
+                                            <td>{{e.time_h}}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </table>
+                                </div>
+
+                                <a  href="/programacion/{{id_result}}/pacientes" class="btn btn-primary" style="width:220px;height:40px;">Ordenar Lista de Pacientes</a>
+                            </div>
+                            <br>
+                            <br>
+                            <!--<a class="btn btn-primary" href="/programacion/{{id_result}}/lista">Ver Asignación Lista de Espera Previa</a>-->
+                        </div>
+                    </div>
                 </div>
-
-                <a  href="/programacion/{{id_result}}/pacientes" class="btn btn-primary" style="width:220px;height:40px;">Ordenar Lista de Pacientes</a>
-              </div>
-              <br>
-              <br>
-              <!--<a class="btn btn-primary" href="/programacion/{{id_result}}/lista">Ver Asignación Lista de Espera Previa</a>-->
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
 </main>
 {% endblock content %}
 
