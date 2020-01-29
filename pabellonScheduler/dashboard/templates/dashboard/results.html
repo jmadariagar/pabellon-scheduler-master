@@ -6,7 +6,7 @@
 {{ block.super}}
 <link href="/static/drag.css" rel="stylesheet">
 {% endblock %}
-
+{% load get_variable %}
 {% block content %}
 <main class="main-content bgc-grey-100">
   <div id="mainContent">
@@ -34,32 +34,53 @@
                     <tr class="table-primary">
                       <td class="redips-only">Sala {{r.room}} AM</td>
                       {% for d in days %}
-
+                      {% set_global_context 'varaux' '0' %}
                       {% for s in schedule %}
+
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
+                      {% set_global_context 'varaux' '1' %}
                       <td>
                         <div class="redips-drag ">{{ s.especialidad }}</div>
-                        {% endif %}
-                        {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
+                      </td>
+                      {% endif %}
+
+                      {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
+                      {% set_global_context 'varaux' '1' %}
                       <td class=" align-middle bg-secondary" rowspan='2'>
                         <div class="redips-drag"><B>{{ s.especialidad }}
                           BLOQUE EXTENDIDO</B></div>
-                        {% endif %}
                       </td>
+                      {% endif %}
                       {% endfor %}
+
+                      {% if varaux == '0' %}
+                      <td>
+                      </td>
+                      {% endif %}
                       {% endfor %}
                     </tr>
                     <tr class="table-success">
                       <td class="redips-only">Sala {{r.room}} PM</td>
                       {% for d in days %}
+                      {% set_global_context 'varaux' '0' %}
                       {% for s in schedule %}
 
                       {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
+                      {% set_global_context 'varaux' '1' %}
                       <td>
                         <div class="redips-drag">{{ s.especialidad }}</div>
-                        {% endif %}
                       </td>
+                      {% endif %}
+
+                      {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 1%}
+                      {% set_global_context 'varaux' '1' %}
+
+                      {% endif %}
                       {% endfor %}
+                      {% if varaux == '0' %}
+                      <td>
+                      </td>
+                      {% endif %}
                       {% endfor %}
                     </tr>
                     {% endfor %}

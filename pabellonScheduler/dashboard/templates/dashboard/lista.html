@@ -8,7 +8,7 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
 <script src="https://files.codepedia.info/files/uploads/iScripts/html2canvas.js"></script>
 {% endblock %}
-
+{% load get_variable %}
 {% block content %}
 <main class="main-content bgc-grey-100">
   <div id="mainContent">
@@ -35,49 +35,66 @@
                   <tr class="table-primary">
                     <td class="redips-only">Sala {{r.room}} AM</td>
                     {% for d in days %}
-
+                    {% set_global_context 'varaux' '0' %}
                     {% for s in schedule %}
                     {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
+                    {% set_global_context 'varaux' '1' %}
                     <td>
                       <div class="font-weight-bold">{{ s.especialidad}} <br>
                         Utilización: {{s.utilization}}%<br>
                         Tiempo restante: {{s.remaining_duration}} min</div>
                       {% for i in s.ingreso_set.all %}
-                      <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} - D:{{i.duracion}} min</div>
+                      <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
+                        TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
-                      {% endif %}
-                      {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
+                    </td>
+                    {% endif %}
+
+                    {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
+                    {% set_global_context 'varaux' '1' %}
                     <td class=" align-middle bg-secondary" rowspan='2'>
                       <div class="font-weight-bold" >{{ s.especialidad }} <br>
                         BLOQUE EXTENDIDO<br>
                         Utilización: {{s.utilization}}%<br>
                         Tiempo restante: {{s.remaining_duration}} min</div>
                       {% for i in s.ingreso_set.all %}
-                      <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} - D:{{i.duracion}} min</div>
+                      <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
+                        TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
                     </td>
                     {% endif %}
                     {% endfor %}
-
+                    {% if varaux == '0' %}
+                    <td>
+                    </td>
+                    {% endif %}
                     {% endfor %}
                   </tr>
                   <tr class="table-success">
                     <td class="redips-only">Sala {{r.room}} PM</td>
                     {% for d in days %}
-
+                    {% set_global_context 'varaux' '0' %}
                     {% for s in schedule %}
                     {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
+                    {% set_global_context 'varaux' '1' %}
                     <td>
                       <div class="font-weight-bold">{{ s.especialidad }} <br>
                         Utilización: {{s.utilization}}%<br>
                         Tiempo restante: {{s.remaining_duration}} min</div>
                       {% for i in s.ingreso_set.all %}
-                      <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} - D:{{i.duracion}} min</div>
+                      <div class="redips-drag">Rut:{{i.run}} - Op:{{i.prestacion}} -
+                        TE:{{i.tiempoespera}} días - D:{{i.duracion}} min</div>
                       {% endfor %}
                     </td>
                     {% endif %}
+                    {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 1%}
+                    {% set_global_context 'varaux' '1' %}
+                    {% endif %}
                     {% endfor %}
-
+                    {% if varaux == '0' %}
+                    <td>
+                    </td>
+                    {% endif %}
                     {% endfor %}
                   </tr>
                   {% endfor %}
