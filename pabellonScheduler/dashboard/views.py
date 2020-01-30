@@ -491,7 +491,8 @@ def export_xls(request, id_result):
         try:
             response = HttpResponse(content_type='application/ms-excel')
             response['Content-Disposition'] = 'attachment; filename="Lista_de_Pacientes.xls"'
-            especialidades = Schedule.objects.filter(file=file).values('especialidad').distinct()
+            especialidades = Schedule.objects.filter(file=file).values('especialidad'). \
+            annotate(time=Sum('initial_duration')).order_by('-time')
             wb = xlwt.Workbook(encoding='utf-8')
             for e in especialidades:
                 titulo = e['especialidad'][0:22]
