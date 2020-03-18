@@ -46,13 +46,14 @@ def process_data(file, programming_date):
     for row in Datos.index:
 
         code = Datos.at[row, 'PRESTA_MIN']
-        if type(code) == str:
+        if type(code) == str and '-' in code:
             a, b, c = code.split('-')
             code = int(a + b + c)
             Datos.at[row, 'PRESTA_MIN'] = str(code) #la nueva base de datos para calcular los tiempos esta en str
                                                     #la antigua esta en int ()
         else:
-            Datos.at[row, 'PRESTA_MIN'] = '0'
+            Datos.at[row, 'PRESTA_MIN'] = str(code)
+
 
         yearE = Datos.at[row, 'F_ENTRADA'].year
         monthE = Datos.at[row, 'F_ENTRADA'].month
@@ -73,7 +74,17 @@ def process_data(file, programming_date):
 
     parameters = parameters[['MAIN_DURATION']]
     Datos = Datos.merge(parameters, how='left', left_on='PRESTA_MIN', right_index=True)
-
+    for row in Datos.index:
+        if ',' in Datos.at[row, 'PRESTA_MIN']:
+            sum = 0
+            for code in Datos.at[row, 'PRESTA_MIN'].split(' ,'):
+                for rowcode in parameters.index:
+                    if code == rowcode:
+                        sum += parameters.at[code, 'MAIN_DURATION']
+                        break
+            Datos.at[row, 'MAIN_DURATION'] = sum
+        if math.isnan(Datos.at[row, 'MAIN_DURATION']):
+            Datos.at[row, 'MAIN_DURATION'] = 0.0
     return Datos, missingColumns
 
 
@@ -106,35 +117,22 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
     T = int(file.ndays)
     R = int(file.nrooms)
 
-
     weekdays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
     starting_date = programming_date
     starting_day = weekdays[starting_date.weekday()]
 
     estimator = 'MAIN_DURATION'  # Estimation according to the main operation. Yet the only relevant to use.
 
-    times = range(1, T + 1)     # indice correspondiente a los dias
-    rooms = range(1, R + 1)     # indice correspondiente a las salas
+    times = range(1, T + 1)  # indice correspondiente a los dias
+    rooms = range(1, R + 1)  # indice correspondiente a las salas
 
     queues = dict()
     for s in specialties:
         queues[s] = queue[queue['Service'] == s]
 
-
     def duration(patient):
-        if type(patient) == int:
-            operation = queue.at[patient, 'Operation']
-            duration = parameters.at[operation, estimator]
+        return queue.at[patient, 'MAIN_DURATION']
 
-        # This option is if one use the patient's ID as the argument
-        else:
-            operation = queue.at[patient, 'Operation']
-            if operation in parameters.index:
-                duration = parameters.at[operation, estimator]
-            else:
-                duration = 0
-
-        return duration
 
 
     def waitingTime(patient):
