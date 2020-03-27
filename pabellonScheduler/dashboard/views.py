@@ -548,7 +548,7 @@ def export_xls2(request, id_result):
             return HttpResponse(_('Invalid request!'))
         try:
             response = HttpResponse(content_type='application/ms-excel')
-            response['Content-Disposition'] = 'attachment; filename="Programación.xls"'
+            response['Content-Disposition'] = 'attachment; filename="Programacion.xls"'
 
             dias = Schedule.objects.filter(file=file).values('day').distinct()
             salas = Schedule.objects.filter(file=file).values('room').distinct()
