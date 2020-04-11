@@ -11,40 +11,27 @@ from .models import Schedule
 from itertools import cycle
 
 
-# aca va todas las cosas que hicimos en los notebook traducidas a .py
-# funciones que se usen en views.py
-
 def process_data(file, programming_date):
-
-    # Leo excel
     Datos = pd.read_excel(file)
-
     columns = list(Datos.columns.values)
 
     for c in columns:
         Datos.rename(columns={c: re.sub('[^a-zA-Z_]+', '', c).upper()}, inplace=True)
 
-
     columnsUploaded =  list(Datos.columns.values)
     columnsNeeded = ['RUN', 'PRESTA_MIN', 'PRESTA_EST', 'F_ENTRADA']
-
     missingColumns = [c for c in columnsNeeded if c not in columnsUploaded]
-
     if missingColumns:
         return None, missingColumns
 
     Datos = Datos[columnsNeeded]
-
-    # parse variables
     Datos['F_ENTRADA'] = pd.to_datetime(Datos['F_ENTRADA'], format='%d-%m-%Y').dt.date
     Datos['RUN'] = Datos['RUN'].astype(str)
     Datos['RUN'] = Datos['RUN'].apply(digito_verificador)
     Datos['PRESTA_EST'] = Datos['PRESTA_EST'].apply(normalizar_texto)
     Datos = Datos.dropna()
 
-    ## crear identidad
     for row in Datos.index:
-
         code = Datos.at[row, 'PRESTA_MIN']
         if type(code) == str and '-' in code:
             a, b, c = code.split('-')
@@ -88,7 +75,7 @@ def process_data(file, programming_date):
     return Datos, missingColumns
 
 
-def run_model(queue, programming_date, file):  # Este es el que corre para
+def run_model(queue, programming_date, file):
 
     file_name = 'parameters/Extracted Parameters_new'
     with open(file_name, 'rb') as file_object:
@@ -156,20 +143,8 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
             shift = 3
         else:
             shift = 4
-
         return weekdays[(shift + t - 1) % 5]
-
-
-    # Friday does not have the same time capacity as other days
-    def isFriday(t):
-        if weekday(t) == 'Viernes':
-            return 1
-        else:
-            return 0
-
     u = 15              # tiempo de limpieza
-
-    # Regular day
 
     def q_AM(t):
         if t == 1:
@@ -195,22 +170,14 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         elif t == 5:
             return int(file.dia5PM)
 
-
     requiredTime = {}
-
+    totalRequiredTime = 0
     for specialty in specialties:
-        subtable = queue[queue['Service'] == specialty]         # escoje la tabla donde el servicio corresponde a la especialidad
+        subtable = queue[queue['Service'] == specialty]
         subtable['Duration'] = subtable.index
         subtable['Duration'] = subtable['Duration'].apply(duration)
-        requiredTime[specialty] = np.sum(subtable['Duration'])  # tiempo requerido por especialidad es la suma de las duraciones de las operaciones por especialidad
-
-    totalRequiredTime = 0
-
-    for specialty in specialties:
-        totalRequiredTime += requiredTime[specialty]            # tiempo total es la suma de los tiempos requeridos en todas las especialidades
-
-    N_F = np.sum([isFriday(t) for t in times])                  # cantidad de viernes en el periodo de planeacion
-
+        requiredTime[specialty] = np.sum(subtable['Duration'])
+        totalRequiredTime += requiredTime[specialty]
 
     pabellon_disponible_AM = {}
     pabellon_disponible_PM = {}
@@ -251,10 +218,11 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         H += R * (pabellon_disponible_AM[t] * q_AM(t) + pabellon_disponible_PM[t] * q_PM(t))
 
     print(totalRequiredTime)
-    h = {s: H * requiredTime[s] / totalRequiredTime for s in specialties}       # Horas ofrecibles de acuerdo a proporciones de tiempos requeridos por especialidad
+    h = {s : H * requiredTime[s] / totalRequiredTime for s in specialties}
 
-    l = list(h.items())                         # transforma diccionario h en lista de tuplas (key,value)
-    l = sorted(l, key=lambda z: z[1])           # y la ordena respecto de value
+
+    l = list(h.items())
+    l = sorted(l, key=lambda z: z[1])
 
 
     m = {}
@@ -264,33 +232,20 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         m[s] = r ** 2
         r += 1
 
-    # No priority
-
     w = {}
-
     for s in specialties:
         w[s] = 1
 
-    model = plp.LpProblem(name="Operation Room Scheduling")
-
     N = {}
-
-    # para cada especialidad y dia se ponen cotas a las variables de decision
     for s in specialties:
         for t in times:
-            N[s, t] = R         # todos los pabellones si quieren
-
-    b_AM = {(s, t): plp.LpVariable(cat='Integer', lowBound=0, upBound=N[s, t], name='b_AM_{0}_{1}'.format(s, t))
-            for s in specialties for t in times}
-
-    b_PM = {(s, t): plp.LpVariable(cat='Integer', lowBound=0, upBound=N[s, t], name='b_PM_{0}_{1}'.format(s, t))
-            for s in specialties for t in times}
+            N[s, t] = R
 
     def add_constr(model, constraint):
         model.addConstraint(constraint)
         return constraint
 
-    def isGranularity(n):                   ### AQUI esto habra que cambiarlo de acuerdo a las horas por turno ingresadas por usuario?
+    def isGranularity(n):
         leftovers = n % 5
         if (leftovers % 3) == 0:
             return True
@@ -301,15 +256,6 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
                 return True
             else:
                 return False
-
-    def bounds(n):
-        lower = math.floor(n)
-        upper = math.floor(n) + 1
-        while isGranularity(upper) == False:
-            upper += 1
-        while isGranularity(lower) == False:
-            lower -= 1
-        return lower, upper
 
     def almostBounds(n):
         lower = round(n) - 1
@@ -342,69 +288,104 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         lowerBounds[s] = lower
         upperBounds[s] = upper
 
-    roundLowSwitch = True
+    def restricciones(n):
+        roundLowSwitch = False
+        roundUpSwitch = False
+        restriccionpara3 = False
+        restriccionpara5 = False
+        resto = False
+        if n <= 6:
+            resto = True
+        if n <= 5:
+            restriccionpara3 = True
+        if n <= 4:
+            restriccionpara5 = True
+        if n <= 3:
+            roundLowSwitch = True
+        elif n <= 2:
+            roundUpSwitch = True
+        elif n <= 1:
+            roundLowSwitch = True
+            roundUpSwitch = True
+        return roundLowSwitch, roundUpSwitch, restriccionpara3, restriccionpara5, resto
 
-    if roundLowSwitch:
-        roundLowConstr = {
-            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
-                                                  sense=plp.LpConstraintGE,
-                                                  rhs=lowerBounds[s],
-                                                  name="roundLow_{0}".format(s)))
-            for s in specialties_new}
+    iteracionInfeasible = 0
+    result = 'Infeasible'
 
-    roundUpSwitch = True
+    while result == 'Infeasible':
+        iteracionInfeasible += 1
 
-    if roundUpSwitch:
-        roundUpConstr = {
-            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
-                                                  sense=plp.LpConstraintLE,
-                                                  rhs=upperBounds[s],
-                                                  name="roundUp_{0}".format(s)))
-            for s in specialties_new}
+        model = plp.LpProblem(name="Operation Room Scheduling")
 
-    sumAMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_AM[s, t] for s in specialties),
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=pabellones_disponibles_AM(R,t),
-                                                         name="SumAM_{0}".format(t)))
-                   for t in times}
+        b_AM = {(s, t): plp.LpVariable(cat='Integer', lowBound=0, upBound=N[s, t], name='b_AM_{0}_{1}'.format(s, t))
+                for s in specialties for t in times}
 
-    sumPMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_PM[s, t] for s in specialties),
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=pabellones_disponibles_PM(R,t),
-                                                         name="SumPM_{0}".format(t)))
-                   for t in times}
+        b_PM = {(s, t): plp.LpVariable(cat='Integer', lowBound=0, upBound=N[s, t], name='b_PM_{0}_{1}'.format(s, t))
+                for s in specialties for t in times}
 
+        roundLowSwitch, roundUpSwitch, restriccionpara3, restriccionpara5, resto = restricciones(iteracionInfeasible)
 
-    treshrsrestriccion = {i: add_constr(model, plp.LpConstraint(e=b_AM[specialties3hrs[i][0],
-                                                                       specialties3hrs[i][1]],
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=1,
-                                                         name="Restric3h_{0}".format(i)))
-                   for i in range(len(specialties3hrs))}
+        if roundLowSwitch:
+            roundLowConstr = {
+                s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
+                                                      sense=plp.LpConstraintGE,
+                                                      rhs=lowerBounds[s],
+                                                      name="roundLow_{0}".format(s)))
+                for s in specialties_new}
 
-    cincohrsrestriccion1 = {i: add_constr(model, plp.LpConstraint(e=b_AM[specialties5hrs[i][0],
-                                                                        specialties5hrs[i][1]],
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=1,
-                                                         name="Restric5h1_{0}".format(i)))
-                   for i in range(len(specialties5hrs))}
-    cincohrsrestriccion2 = {i: add_constr(model, plp.LpConstraint(e=b_PM[specialties5hrs[i][0],
-                                                                        specialties5hrs[i][1]],
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=1,
-                                                         name="Restric5h2_{0}".format(i)))
-                   for i in range(len(specialties5hrs))}
+        if roundUpSwitch:
+            roundUpConstr = {
+                s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
+                                                      sense=plp.LpConstraintLE,
+                                                      rhs=upperBounds[s],
+                                                      name="roundUp_{0}".format(s)))
+                for s in specialties_new}
 
-    objective = plp.lpSum(w[s] * (q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t]) for s in specialties for t in times)
+        if resto:
+            sumAMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_AM[s, t] for s in specialties),
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=pabellones_disponibles_AM(R,t),
+                                                                 name="SumAM_{0}".format(t)))
+                           for t in times}
 
-    model.sense = plp.LpMaximize
-    model.setObjective(objective)
+            sumPMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_PM[s, t] for s in specialties),
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=pabellones_disponibles_PM(R,t),
+                                                                 name="SumPM_{0}".format(t)))
+                           for t in times}
 
-    start_time = time.time()
-    model.solve()
-    elapsed_time = time.time() - start_time
+        if restriccionpara3:
+            treshrsrestriccion = {i: add_constr(model, plp.LpConstraint(e=b_AM[specialties3hrs[i][0],
+                                                                               specialties3hrs[i][1]],
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=1,
+                                                                 name="Restric3h_{0}".format(i)))
+                           for i in range(len(specialties3hrs))}
 
-    print(plp.LpStatus[model.status])
+        if restriccionpara5:
+            cincohrsrestriccion1 = {i: add_constr(model, plp.LpConstraint(e=b_AM[specialties5hrs[i][0],
+                                                                                specialties5hrs[i][1]],
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=1,
+                                                                 name="Restric5h1_{0}".format(i)))
+                           for i in range(len(specialties5hrs))}
+            cincohrsrestriccion2 = {i: add_constr(model, plp.LpConstraint(e=b_PM[specialties5hrs[i][0],
+                                                                                specialties5hrs[i][1]],
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=1,
+                                                                 name="Restric5h2_{0}".format(i)))
+                           for i in range(len(specialties5hrs))}
+
+        objective = plp.lpSum(w[s] * (q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t]) for s in specialties for t in times)
+
+        model.sense = plp.LpMaximize
+        model.setObjective(objective)
+
+        start_time = time.time()
+        model.solve()
+        elapsed_time = time.time() - start_time
+
+        result = plp.LpStatus[model.status]
 
     blocks = pd.DataFrame(index=specialties,
                           columns=['% Required Time', 'Fractional hours', 'Offered AM blocks', 'Offered PM blocks',
@@ -425,8 +406,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
 
         j = 0 #numero sala
         for s in blocks.index:
-            in5hr = 1
-            if [s, t] in specialties5hrs and in5hr:
+            if [s, t] in specialties5hrs and restriccionpara5:
                 schedule.iat[0, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j + 1, bloque='AM',
                                         file=file, initial_duration=((q_AM(t) + q_PM(t)) * 60),
@@ -447,7 +427,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         j = J #numero sala
 
         for s in blocks.index:
-            b = round(b_AM[s, t].varValue) - ([s ,t] in specialties5hrs)
+            b = round(b_AM[s, t].varValue) - ([s, t] in specialties5hrs) * restriccionpara5
             while b > 0:
                 schedule.iat[i, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j+1, bloque='AM',
@@ -460,7 +440,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         j = J #numero sala
 
         for s in blocks.index:
-            b = round(b_PM[s, t].varValue) - ([s ,t] in specialties5hrs)
+            b = round(b_PM[s, t].varValue) - ([s, t] in specialties5hrs)
             while b > 0:
                 schedule.iat[i, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j+1, bloque='PM',
@@ -470,12 +450,9 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
                 j += 1
 
 def ingresacion(file, schedule, lista, u):
-
     for i in lista:
-
         if i.duracion:
             for s in schedule:
-
                 if (s.remaining_duration > i.duracion + u) and (s.especialidad == i.especialidad) \
                         and (i.schedule.all().count() == 0):
                     s.remaining_duration = s.remaining_duration - (i.duracion + u)
