@@ -114,9 +114,8 @@
 {% block javascripts %}
 {{ block.super }}
 <script type="text/javascript" src="/static/redips-drag-min.js"></script>
-<script >
-
-    window.onload = function() {
+<script>
+  window.onload = function() {
       rd = REDIPS.drag;
       rd.init();
 
@@ -124,6 +123,7 @@
       var pos2 = null;
       var elem = null;
       var time = null;
+      var bulian = null;
 
       rd.event.clicked = function () {
         // get current position (method returns positions as array)
@@ -132,13 +132,12 @@
         console.log('clicked: ' + pos1[0] + ' ' + pos1[1] + ' ' + pos1[2]);
       };
 
-      rd.event.dropped = function (targetCell) {
+      rd.event.dropped = async function (targetCell) {
 
         pos2 = rd.getPosition();
         pos_nueva = rd.getPosition();
         elem = rd.obj;
         console.log('dropped: ' + pos2[0] + ' ' + pos2[1] + ' ' + pos2[2]);
-
         if(pos1 && pos2 && elem){
             if(pos1[0]!==pos2[0] ){
                 console.log(elem);
@@ -154,10 +153,11 @@
                   var row = document.getElementById("pacientes").insertRow().insertCell(0);
                   row.className = "table-primary";
                 } else {
-                 // tiempoCompleto(elem.id, document.getElementById('tiempo_restante').innerHTML)
-                  //boolean = document.getElementById('boolean').innerHTML
-                  //console.log('bool' + ' ' + boolean)
-                  if (0){
+                   var boolean = await tiempoCompleto(elem.id, document.getElementById('tiempo_restante').innerHTML)
+
+                  //var boolean = document.getElementById('boolean').innerHTML
+                  console.log('bool' + ' ' + boolean)
+                  if (boolean == 0){
                     rd.moveObject({
                       obj: elem,
                       target: pos1
@@ -189,7 +189,10 @@
 
 
       };
-
+      function sleep(seconds){
+          var waitUntil = new Date().getTime() + seconds*1000;
+          while(new Date().getTime() < waitUntil) true;
+      };
       function updatePrioridad(idp, mode) {
 
         var http = new XMLHttpRequest();
@@ -223,7 +226,7 @@
       }
 
 
-      function tiempoCompleto(idp, time) {
+      async function tiempoCompleto(idp, time) {
 
         var http = new XMLHttpRequest();
         var url = "{% url 'tiempo-completo' %}";
@@ -233,22 +236,26 @@
           'time': time,
         });
 
-        http.open('POST', url, true);
-        http.setRequestHeader('X-CSRFToken','{{ csrf_token }}');
-        http.setRequestHeader("Content-type", "application/json");
+        return new Promise(function(resolve, reject) {
+          http.open('POST', url, true);
+          http.setRequestHeader('X-CSRFToken','{{ csrf_token }}');
+          http.setRequestHeader("Content-type", "application/json");
 
-        http.onreadystatechange = function() {
+          http.onreadystatechange = function() {
+              if (http.readyState == 4) {
+                if (http.status == 200) {
 
-            if (http.readyState == 4 && http.status == 200) {
-
-                var response = http.responseText;
-                document.getElementById('boolean').innerHTML = response;
-
-            }
-
-        };
-
-        http.send(data);
+                    var response = JSON.parse(http.responseText);
+                    console.log('bool resp' + ' ' + response)
+                    resolve(response);
+                    // document.getElementById('boolean').innerHTML = response
+                } else {
+                  reject("Error, status code = " + http.status)
+                }
+              }
+          };
+          http.send(data);
+        });
       }
 
     };
@@ -275,5 +282,6 @@
           }
         }
       }
-  </script>
+
+</script>
 {% endblock %}

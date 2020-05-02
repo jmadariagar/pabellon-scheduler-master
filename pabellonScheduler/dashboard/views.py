@@ -439,16 +439,16 @@ def tiempoCompleto(request):
             return HttpResponse(_('Invalid request!'))
 
         try:
-            boolean = '1'
+            boolean = 1
             ingreso = Ingreso.objects.get(file=file,
                                           pk=int(idp))
-            if (float(ingreso.duracion) > float(time)):
-                boolean = '0'
+            if (float(ingreso.duracion) > float(time) or ingreso.duracion==0):
+                boolean = 0
 
         except:
             return HttpResponse(_('Not found or cannot update!'))
 
-        return HttpResponse(_(boolean))
+        return JsonResponse(boolean, safe=False)
 
     return HttpResponse(_('No post!'))
 
