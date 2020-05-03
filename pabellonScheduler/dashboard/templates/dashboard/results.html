@@ -39,14 +39,14 @@
                                         {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 0%}
                                         {% set_global_context 'varaux' '1' %}
                                         <td>
-                                            <div class="redips-drag ">{{ s.especialidad }}</div>
+                                            <div class="redips-drag" id="{{s.especialidad}}{{s.bloque_extendido}}">{{ s.especialidad }}</div>
                                         </td>
                                         {% endif %}
 
                                         {% if s.day == d.day and s.room == r.room and s.bloque == 'AM' and s.bloque_extendido == 1%}
                                         {% set_global_context 'varaux' '1' %}
-                                        <td class=" align-middle bg-secondary" rowspan='2'>
-                                            <div class="redips-drag"><B>{{ s.especialidad }}
+                                        <td class="redips-only align-middle bg-secondary" rowspan='2'>
+                                            <div class="redips-only" id="a1"><B>{{ s.especialidad }}
                                                 BLOQUE EXTENDIDO</B></div>
                                         </td>
                                         {% endif %}
@@ -67,7 +67,7 @@
                                         {% if s.day == d.day and s.room == r.room and s.bloque == 'PM' and s.bloque_extendido == 0%}
                                         {% set_global_context 'varaux' '1' %}
                                         <td>
-                                            <div class="redips-drag">{{ s.especialidad }}</div>
+                                            <div class="redips-drag" id="{{s.especialidad}}{{s.bloque_extendido}}">{{ s.especialidad }}</div>
                                         </td>
                                         {% endif %}
 
@@ -139,27 +139,18 @@
       rd.event.clicked = function () {
         // get current position (method returns positions as array)
         pos1 = rd.getPosition();
+        elem1 = rd.obj;
         // display current row and current cell
         console.log('clicked: ' + pos1[1] + ' ' + pos1[2]);
       };
 
       rd.event.dropped = function () {
         pos2 = rd.getPosition();
+        elem2 = rd.obj;
         console.log('dropped: ' + pos2[1] + ' ' + pos2[2]);
 
         if(pos1 && pos2){
-            if(0){
-                        rd.moveObject({
-                        source: pos1,
-                        target: pos2
-                    });
-                        rd.moveObject({
-                        obj: elem1,
-                        target: pos1
-                    });
-
-                    }
-            else if(pos1[1]!==pos2[1] || pos1[2]!==pos2[2]){
+            if(pos1[1]!==pos2[1] || pos1[2]!==pos2[2]){
               var day1 = headertable[pos1[2]-1];
               var day2 = headertable[pos2[2]-1]
               var room1 = Math.floor((pos1[1]-1)/2)+1;
