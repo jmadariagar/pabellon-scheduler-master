@@ -303,15 +303,6 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
             else:
                 return False
 
-    def bounds(n):
-        lower = math.floor(n)
-        upper = math.floor(n) + 1
-        while isGranularity(upper) == False:
-            upper += 1
-        while isGranularity(lower) == False:
-            lower -= 1
-        return lower, upper
-
     def almostBounds(n):
         lower = round(n) - 1
         upper = round(n) + 1
@@ -343,81 +334,114 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         lowerBounds[s] = lower
         upperBounds[s] = upper
 
-    roundLowSwitch = True
+    def restricciones(n):
+        roundLowSwitch = False
+        roundUpSwitch = False
+        restriccionpara3 = False
+        restriccionpara5 = False
+        restric_one = False
+        resto = False
+        if n <= 7:
+            resto = True
+        if n <=6:
+            restric_one = True
+        if n <= 5:
+            restriccionpara3 = True
+        if n <= 4:
+            restriccionpara5 = True
+        if n <= 3:
+            roundLowSwitch = True
+        elif n <= 2:
+            roundUpSwitch = True
+        elif n <= 1:
+            roundLowSwitch = True
+            roundUpSwitch = True
+        return roundLowSwitch, roundUpSwitch, restriccionpara3, restriccionpara5, resto, restric_one
 
-    lcoefici = 10
-    ucoefici = 5
-    # coeficientes para suavizar las restricciones
-    if roundLowSwitch:
-        roundLowConstr = {
-            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
-                                                  sense=plp.LpConstraintGE,
-                                                  rhs=max(0, lowerBounds[s] - lcoefici),
-                                                  name="roundLow_{0}".format(s)))
-            for s in specialties}
+    iteracionInfeasible = 0
+    result = 'Infeasible'
 
-    roundUpSwitch = True
+    while result == 'Infeasible':
+        iteracionInfeasible += 1
 
-    if roundUpSwitch:
-        roundUpConstr = {
-            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
-                                                  sense=plp.LpConstraintLE,
-                                                  rhs=ucoefici + upperBounds[s],
-                                                  name="roundUp_{0}".format(s)))
-            for s in specialties}
+        model = plp.LpProblem(name="Operation Room Scheduling")
 
-    sumAMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_AM[s, t] for s in specialties),
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=pabellones_disponibles_AM(R,t),
-                                                         name="SumAM_{0}".format(t)))
-                   for t in times}
+        b_AM = {(s, t): plp.LpVariable(cat='Integer', lowBound=0, upBound=N[s, t], name='b_AM_{0}_{1}'.format(s, t))
+                for s in specialties for t in times}
 
-    sumPMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_PM[s, t] for s in specialties),
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=pabellones_disponibles_PM(R,t),
-                                                         name="SumPM_{0}".format(t)))
-                   for t in times}
+        b_PM = {(s, t): plp.LpVariable(cat='Integer', lowBound=0, upBound=N[s, t], name='b_PM_{0}_{1}'.format(s, t))
+                for s in specialties for t in times}
 
+        roundLowSwitch, roundUpSwitch, restriccionpara3, restriccionpara5, resto, restric_one = restricciones(iteracionInfeasible)
 
-    treshrsrestriccion = {i: add_constr(model, plp.LpConstraint(e=b_AM[specialties3hrs[i][0],
-                                                                       specialties3hrs[i][1]],
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=1,
-                                                         name="Restric3h_{0}".format(i)))
-                   for i in range(len(specialties3hrs))}
+        if roundLowSwitch:
+            roundLowConstr = {
+                s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
+                                                      sense=plp.LpConstraintGE,
+                                                      rhs=lowerBounds[s],
+                                                      name="roundLow_{0}".format(s)))
+                for s in specialties_new}
 
-    cincohrsrestriccion1 = {i: add_constr(model, plp.LpConstraint(e=b_AM[specialties5hrs[i][0],
-                                                                        specialties5hrs[i][1]],
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=1,
-                                                         name="Restric5h1_{0}".format(i)))
-                   for i in range(len(specialties5hrs))}
-    cincohrsrestriccion2 = {i: add_constr(model, plp.LpConstraint(e=b_PM[specialties5hrs[i][0],
-                                                                        specialties5hrs[i][1]],
-                                                         sense=plp.LpConstraintEQ,
-                                                         rhs=1,
-                                                         name="Restric5h2_{0}".format(i)))
-                   for i in range(len(specialties5hrs))}
+        if roundUpSwitch:
+            roundUpConstr = {
+                s: add_constr(model, plp.LpConstraint(e=plp.lpSum(q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t] for t in times),
+                                                      sense=plp.LpConstraintLE,
+                                                      rhs=upperBounds[s],
+                                                      name="roundUp_{0}".format(s)))
+                for s in specialties_new}
 
-    restric_one = 1 #esta es la restrccion para que cada especialidad reciba al menos un bloque
-    if restric_one:
-        sumBConstr = {
-            s: add_constr(model, plp.LpConstraint(e=plp.lpSum(1 * b_AM[s, t] + 1 * b_PM[s, t] for t in times),
-                                                  sense=plp.LpConstraintGE,
-                                                  rhs=1,
-                                                  name="roundLow2_{0}".format(s)))
-            for s in specialties}
+        if resto:
+            sumAMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_AM[s, t] for s in specialties),
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=pabellones_disponibles_AM(R,t),
+                                                                 name="SumAM_{0}".format(t)))
+                           for t in times}
 
-    objective = plp.lpSum(w[s] * (q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t]) for s in specialties for t in times)
+            sumPMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_PM[s, t] for s in specialties),
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=pabellones_disponibles_PM(R,t),
+                                                                 name="SumPM_{0}".format(t)))
+                           for t in times}
 
-    model.sense = plp.LpMaximize
-    model.setObjective(objective)
+        if restriccionpara3:
+            treshrsrestriccion = {i: add_constr(model, plp.LpConstraint(e=b_AM[specialties3hrs[i][0],
+                                                                               specialties3hrs[i][1]],
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=1,
+                                                                 name="Restric3h_{0}".format(i)))
+                           for i in range(len(specialties3hrs))}
 
-    start_time = time.time()
-    model.solve()
-    elapsed_time = time.time() - start_time
+        if restriccionpara5:
+            cincohrsrestriccion1 = {i: add_constr(model, plp.LpConstraint(e=b_AM[specialties5hrs[i][0],
+                                                                                specialties5hrs[i][1]],
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=1,
+                                                                 name="Restric5h1_{0}".format(i)))
+                           for i in range(len(specialties5hrs))}
+            cincohrsrestriccion2 = {i: add_constr(model, plp.LpConstraint(e=b_PM[specialties5hrs[i][0],
+                                                                                specialties5hrs[i][1]],
+                                                                 sense=plp.LpConstraintEQ,
+                                                                 rhs=1,
+                                                                 name="Restric5h2_{0}".format(i)))
+                           for i in range(len(specialties5hrs))}
+        if restric_one:
+            sumBConstr = {
+                s: add_constr(model, plp.LpConstraint(e=plp.lpSum(1 * b_AM[s, t] + 1 * b_PM[s, t] for t in times),
+                                                      sense=plp.LpConstraintGE,
+                                                      rhs=1,
+                                                      name="roundLow2_{0}".format(s)))
+                for s in specialties}
 
-    print(plp.LpStatus[model.status])
+        objective = plp.lpSum(w[s] * (q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t]) for s in specialties for t in times)
+
+        model.sense = plp.LpMaximize
+        model.setObjective(objective)
+
+        start_time = time.time()
+        model.solve()
+        elapsed_time = time.time() - start_time
+
+        result = plp.LpStatus[model.status]
 
     blocks = pd.DataFrame(index=specialties,
                           columns=['% Required Time', 'Fractional hours', 'Offered AM blocks', 'Offered PM blocks',
@@ -438,8 +462,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
 
         j = 0 #numero sala
         for s in blocks.index:
-            in5hr = 1
-            if [s, t] in specialties5hrs and in5hr:
+            if [s, t] in specialties5hrs and restriccionpara5:
                 schedule.iat[0, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j + 1, bloque='AM',
                                         file=file, initial_duration=((q_AM(t) + q_PM(t)) * 60),
@@ -460,7 +483,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         j = J #numero sala
 
         for s in blocks.index:
-            b = round(b_AM[s, t].varValue) - ([s ,t] in specialties5hrs)
+            b = round(b_AM[s, t].varValue) - ([s, t] in specialties5hrs) * restriccionpara5
             while b > 0:
                 schedule.iat[i, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j+1, bloque='AM',
@@ -473,7 +496,7 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
         j = J #numero sala
 
         for s in blocks.index:
-            b = round(b_PM[s, t].varValue) - ([s ,t] in specialties5hrs)
+            b = round(b_PM[s, t].varValue) - ([s, t] in specialties5hrs)
             while b > 0:
                 schedule.iat[i, j] = s
                 new_schedule = Schedule(especialidad=s, day=wday, room=j+1, bloque='PM',
