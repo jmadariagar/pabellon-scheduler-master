@@ -41,7 +41,7 @@
                                     <div class="form-row">
                                         <div class="form-group col-md-2">
                                             <label for="date">Fecha Inicio Programación</label>
-                                            <input id="date" name="date" type="text" class="form-control" value='{% now "d/m/Y" %}' autocomplete="off">
+                                            <input id="date" name="date" type="text" class="form-control" autocomplete="off">
                                         </div>
                                         <div class="form-group col-md-2" style="display:none">
                                             <label for="inputDiasPM">N° Bloques PM</label>
@@ -149,6 +149,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.9.0/locales/bootstrap-datepicker.es.min.js"></script>
 <script>
     $('#date').datepicker({
+        daysOfWeekDisabled: '0,6',
         language: 'es',
         orientation: 'bottom'
     });
