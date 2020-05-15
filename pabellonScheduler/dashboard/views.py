@@ -328,6 +328,80 @@ class PacientesViewFirstTime(View):
 
         return render(request, self.template, self.context)
 
+class ExtendidosView(View):
+    context = {}
+    template = 'dashboard/extendidos.html'
+
+    def get(self, request, id_result, *args, **kwargs):  # para mostrar info al usuari
+
+        try:
+            file = FileUpload.objects.get(pk=id_result)
+        except:
+            return render(request, self.template, self.context)
+
+        self.context['schedule'] = Schedule.objects.filter(file=file)
+        self.context['rooms'] = Schedule.objects.filter(file=file).values('room').distinct().order_by('room')
+        self.context['days'] = Schedule.objects.filter(file=file).values('day').distinct()
+        self.context['especialidades'] = Schedule.objects.filter(file=file).values('especialidad'). \
+            annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by('-time')
+        self.context['id_result'] = id_result
+
+        return render(request, self.template, self.context)
+
+    def post(self, request, *args, **kwargs):  # post es para recibir info del usuario
+
+        form = FileUploadForm(request.POST, request.FILES)  # formulario, definidos en form.py.
+        # Si hay un post, se usa un form
+        if form.is_valid():
+
+            if int(request.META['CONTENT_LENGTH']) > 10485760:  # si el tamaño es mayor a 10 megas
+                self.template = 'dashboard/index.html'
+                self.context['files'] = FileUpload.objects.order_by('-created')
+                self.context['mensaje'] = "El archivo a subir debe ser menor a 10 MB"
+                return render(request, self.template, self.context)
+
+            programming_date = dt.datetime.strptime(request.POST['date'], "%d/%m/%Y").date()
+
+            # request es el objetoi que contiene todas las cosas que vienen del request del usuario (cuando ejecuta la accion)
+            # variables definidas en el html
+            new_file = FileUpload(file=request.FILES['file'], date=programming_date, nrooms=request.POST['nrooms'],
+                                  ndays=request.POST['ndays'],
+                                  dia1AM=request.POST['dia1AM'],
+                                  dia2AM=request.POST['dia2AM'],
+                                  dia3AM=request.POST['dia3AM'],
+                                  dia4AM=request.POST['dia4AM'],
+                                  dia5AM=request.POST['dia5AM'],
+                                  dia1PM=request.POST['dia1PM'],
+                                  dia2PM=request.POST['dia2PM'],
+                                  dia3PM=request.POST['dia3PM'],
+                                  dia4PM=request.POST['dia4PM'],
+                                  dia5PM=request.POST['dia5PM'],
+                                  )
+
+            start_time = time.time()
+            Datos, missingColumns = process_data(new_file.file, programming_date)  # funcion definida en utils.py.
+
+            if missingColumns:
+                self.template = 'dashboard/index.html'
+                self.context['files'] = FileUpload.objects.order_by('-created')
+                self.context['mensaje'] = "Archivo sin las columnas " + ", ".join(
+                    missingColumns)  # 'mensaje' tiene que estar en index.html
+                return render(request, self.template, self.context)
+
+            print(time.time() - start_time, 's')
+            new_file.save()  # esto es lo que crea las filas en la base de datos de sqlite
+
+            save_lista_espera(Datos, new_file)
+
+            run_model(Datos, programming_date, new_file)  # del utils
+
+            return redirect('/programacion/' + str(new_file.pk))  # redirige a la pagina de programacion
+        else:
+            self.template = 'dashboard/index.html'
+            self.context['files'] = FileUpload.objects.order_by('-created')[:10]
+            self.context['mensaje'] = "Error al subir el archivo"
+            return render(request, self.template, self.context)
+
 
 def updateSchedule(request):
     if request.method == 'POST':
@@ -336,6 +410,7 @@ def updateSchedule(request):
             id_result = data['id_result']
             room1 = data['room1']
             room2 = data['room2']
+            day0 = data['day0']
             day1 = data['day1']
             day2 = data['day2']
             bloque1 = data['bloque1']
@@ -345,31 +420,72 @@ def updateSchedule(request):
             return HttpResponse(_('Invalid request!'))
 
         try:
+            weekdays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+            def weekday(t):
+                if day0 == 'Lunes':
+                    shift = 0
+                elif day0 == 'Martes':
+                    shift = 1
+                elif day0 == 'Miércoles':
+                    shift = 2
+                elif day0 == 'Jueves':
+                    shift = 3
+                else:
+                    shift = 4
+                return weekdays[(shift + t - 1) % 5]
+
+
+            if bloque1 == 'PM':
+                i = 1
+                salto = 0
+                while True:
+                    schedule_aux =Schedule.objects.get(file=file,
+                                             room=room1,
+                                             day=weekday(i),
+                                             bloque=bloque1)
+                    if schedule_aux.bloque_extendido == 1:
+                        salto += 1
+                    if weekday(i) == day1 and salto == 0:
+                        break
+                    elif weekday(i) == day1:
+                        day1 = weekday(i + salto)
+                        salto = 0
+                    i +=1
+
+            if bloque2 == 'PM':
+                i = 1
+                salto = 0
+                while True:
+                    schedule_aux =Schedule.objects.get(file=file,
+                                             room=room2,
+                                             day=weekday(i),
+                                             bloque=bloque2)
+                    if schedule_aux.bloque_extendido == 1:
+                        salto += 1
+                    if weekday(i) == day2 and salto == 0:
+                        break
+                    elif weekday(i) == day2:
+                        day2 = weekday(i + salto)
+                        salto = 0
+                    i +=1
+
             schedule1 = Schedule.objects.get(file=file,
                                              room=room1,
                                              day=day1,
                                              bloque=bloque1)
             id_initial = schedule1.pk
-            s1duration = schedule1.initial_duration
+            especialidad1 = schedule1.especialidad
             schedule2 = Schedule.objects.filter(file=file,
                                                 room=room2,
                                                 day=day2,
                                                 bloque=bloque2)
 
             if schedule2:
-                s2duration = schedule2.first().initial_duration
-                schedule2.update(room=room1,
-                                 day=day1,
-                                 bloque=bloque1,
-                                 initial_duration=s1duration,
-                                 remaining_duration=s1duration)
+                especialidad2 = schedule2.first().especialidad
+                schedule2.update(especialidad=especialidad1)
 
             if id_initial:
-                Schedule.objects.filter(pk=id_initial).update(room=room2,
-                                                              day=day2,
-                                                              bloque=bloque2,
-                                                              initial_duration=s2duration,
-                                                              remaining_duration=s2duration)
+                Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2)
 
             especialidades = list(Schedule.objects.filter(file=file).values('especialidad'). \
                 annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by(
@@ -382,6 +498,74 @@ def updateSchedule(request):
 
     return HttpResponse(_('No post!'))
 
+def updateScheduleExtended(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            id_result = data['id_result']
+            room1 = data['room1']
+            room2 = data['room2']
+            day1 = data['day1']
+            day2 = data['day2']
+            file = FileUpload.objects.get(pk=id_result)
+        except:
+            return HttpResponse(_('Invalid request!'))
+
+        try:
+            schedule1 = Schedule.objects.get(file=file,
+                                             room=room1,
+                                             day=day1,
+                                             bloque='AM')
+            id_initial = schedule1.pk
+            especialidad1 = schedule1.especialidad
+            schedule2 = Schedule.objects.filter(file=file,
+                                                room=room2,
+                                                day=day2,
+                                                bloque='AM')
+
+            if schedule2:
+                especialidad2 = schedule2.first().especialidad
+                schedule2.update(especialidad=especialidad1,
+                                 bloque_extendido=1)
+
+            if id_initial:
+                Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2,
+                                                              bloque_extendido=0)
+
+            schedule1 = Schedule.objects.get(file=file,
+                                             room=room1,
+                                             day=day1,
+                                             bloque='PM')
+            id_initial = schedule1.pk
+            especialidad1 = schedule1.especialidad
+            schedule2 = Schedule.objects.filter(file=file,
+                                                room=room2,
+                                                day=day2,
+                                                bloque='PM')
+
+            if schedule2:
+                especialidad2 = schedule2.first().especialidad
+                schedule2.update(especialidad=especialidad1,
+                                 bloque_extendido=1)
+
+            if id_initial:
+                Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2,
+                                                              bloque_extendido=0)
+
+
+
+
+
+            especialidades = list(Schedule.objects.filter(file=file).values('especialidad'). \
+                annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by(
+                '-time'))
+
+        except:
+            return HttpResponse(_('Not found or cannot update!'))
+
+        return JsonResponse(especialidades, safe=False)
+
+    return HttpResponse(_('No post!'))
 
 def updatePrioridad(request):
     if request.method == 'POST':

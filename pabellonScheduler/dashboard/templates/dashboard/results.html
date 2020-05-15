@@ -103,8 +103,18 @@
                                         {% endfor %}
                                     </table>
                                 </div>
-
-                                <a  href="/programacion/{{id_result}}/pacientes" class="btn btn-primary" style="width:220px;height:40px;">Ordenar Lista de Pacientes</a>
+                                <div class="row">
+                                    <form>
+                                        <div class="col-md-4">
+                                            <a  href="/programacion/{{id_result}}/pacientes" class="btn btn-primary" style="width:220px;height:40px;">Ordenar Lista de Pacientes</a>
+                                        </div>
+                                    </form>
+                                    <form>
+                                        <div class="col-md-4">
+                                            <a  href="/programacion/{{id_result}}/extendidos" class="btn btn-primary" style="width:220px;height:40px;">Cambiar Bloques Extendidos</a>
+                                        </div>
+                                    </form>
+                                </div>
                             </div>
                             <br>
                             <br>
@@ -151,24 +161,29 @@
 
         if(pos1 && pos2){
             if(pos1[1]!==pos2[1] || pos1[2]!==pos2[2]){
+              var day0 = headertable[0];
+              console.log('day0: '+ day0)
               var day1 = headertable[pos1[2]-1];
+              console.log('day1: '+ day1)
               var day2 = headertable[pos2[2]-1]
+              console.log('day2: '+ day2)
               var room1 = Math.floor((pos1[1]-1)/2)+1;
               var room2 = Math.floor((pos2[1]-1)/2)+1;
               var bloque1 = (pos1[1]%2 ? 'AM': 'PM');
               var bloque2 = (pos2[1]%2 ? 'AM': 'PM');
-              updateSchedule(day1, day2, room1, room2, bloque1, bloque2);
+              updateSchedule(day0, day1, day2, room1, room2, bloque1, bloque2);
             }
         }
 
       };
 
-      function updateSchedule(day1, day2, room1, room2, bloque1, bloque2) {
+      function updateSchedule(day0, day1, day2, room1, room2, bloque1, bloque2) {
 
         var http = new XMLHttpRequest();
         var url = "{% url 'update-schedule' %}";
         var data = JSON.stringify({
           'id_result': {{id_result}},
+          'day0': day0,
           'day1': day1,
           'day2': day2,
           'room1': room1,
