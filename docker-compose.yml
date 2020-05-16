@@ -15,7 +15,7 @@ services:
   web_pabellon:
     build: .
     container_name: web_pabellon
-    command: bash -c "python manage.py makemigrations && python manage.py migrate && gunicorn pabellonScheduler.wsgi -b 0.0.0.0:8000 --workers 3"
+    command: bash -c "pip install -r requirements.txt && python manage.py makemigrations && python manage.py migrate && gunicorn pabellonScheduler.wsgi -b 0.0.0.0:8000 --workers 3"
     volumes:
       - ./pabellonScheduler:/src
     expose:
