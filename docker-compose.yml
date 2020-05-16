@@ -1,41 +1,41 @@
 version: '3'
 
 services:
-  nginx_pabellon:
+  nginx_pabellon_sam:
     image: nginx:latest
-    container_name: nginx_pabellon
+    container_name: nginx_pabellon_sam
     volumes:
       - ./pabellonScheduler:/src
       - ./config/nginx:/etc/nginx/conf.d
     depends_on:
-      - web_pabellon
+      - web_pabellon_sam
     ports:
-      - "8086:80"
+      - "8087:80"
 
-  web_pabellon:
+  web_pabellon_sam:
     build: .
-    container_name: web_pabellon
-    command: bash -c "python manage.py makemigrations && python manage.py migrate && gunicorn pabellonScheduler.wsgi -b 0.0.0.0:8000 --workers 3"
+    container_name: web_pabellon_sam
+    command: bash -c "pip install -r requirements.txt && python manage.py makemigrations && python manage.py migrate && gunicorn pabellonScheduler.wsgi -b 0.0.0.0:8000 --workers 3"
     volumes:
       - ./pabellonScheduler:/src
     expose:
       - "8000"
     links:
-      - db_pabellon:db_pabellon
+      - db_pabellon_sam:db_pabellon_sam
 
-  db_pabellon:
+  db_pabellon_sam:
     image: mariadb:latest
-    container_name: db_pabellon
+    container_name: db_pabellon_sam
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: HLCMr00t
-      MYSQL_DATABASE: pabellonScheduler
-      MYSQL_USER: hlcmPabellonuser
-      MYSQL_PASSWORD: hlcmPabellonDBus3r
+      MYSQL_ROOT_PASSWORD: HLCMr00t_sam
+      MYSQL_DATABASE: pabellonScheduler_sam
+      MYSQL_USER: hlcmPabellonuser_sam
+      MYSQL_PASSWORD: hlcmPabellonDBus3r_sam
     volumes:
       - ./data:/var/lib/mysql
 
 networks:
   default:
     external:
-      name: webproxy
+      name: webproxy_sam

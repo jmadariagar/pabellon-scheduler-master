@@ -75,27 +75,18 @@ WSGI_APPLICATION = 'pabellonScheduler.wsgi.application'
 # https://docs.djangoproject.com/en/2.0/ref/settings/#databases
 
 DATABASES = {
+    #'default': {
+    #    'ENGINE': 'django.db.backends.sqlite3',
+    #    'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    #}
      'default': {
-         'ENGINE': 'django.db.backends.sqlite3',
-         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'), #por defecto
+         'ENGINE': 'django.db.backends.mysql',
+         'NAME': 'pabellonScheduler_sam',
+         'USER': 'hlcmPabellonuser_sam',
+         'PASSWORD': 'hlcmPabellonDBus3r_sam',
+         'HOST': 'db_pabellon_sam',
+         'PORT': 3306,
      }
-    #'default': {
-    #    'ENGINE': 'django.db.backends.mysql',
-    #    'NAME': 'pabellonScheduler',
-    #    'USER': 'hlcmPabellonuser',
-    #    'PASSWORD': 'hlcmPabellonDBus3r',
-    #    'HOST': 'db_pabellon',
-    #    'PORT': 3306,
-    #}
-    #'default': {
-    #    'ENGINE': 'django.db.backends.mysql',
-    #    'NAME': 'pabellonScheduler',
-    #    'USER': 'root',
-    #    'PASSWORD': '8231eb8',
-    #    'HOST': 'localhost',
-    #    'PORT': 3306,
-    #}
-
 }
 
 
