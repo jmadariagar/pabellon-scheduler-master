@@ -237,11 +237,11 @@ def run_model(queue, programming_date, file):  # Este es el que corre para
             for s in specialties:
                 cola = queue[queue["Service"] == s]
                 Max_Duracion = cola[cola["ORDEN"] == max(cola["ORDEN"])]["MAIN_DURATION"][0]
-                if Max_Duracion >= 300 and pabellones > 0 and s not in specialties3y5:
+                if Max_Duracion >= 285 and pabellones > 0 and s not in specialties3y5:
                     specialties5hrs.append([s, t])
                     specialties3y5.append(s)
                     pabellones -= 1
-                elif Max_Duracion >= 180 and Max_Duracion < 300 and pabellones > 0 and s not in specialties3y5:
+                elif Max_Duracion >= 165 and Max_Duracion < 285 and pabellones > 0 and s not in specialties3y5:
                     specialties3hrs.append([s, t])
                     specialties3y5.append(s)
                     pabellones -= 1
