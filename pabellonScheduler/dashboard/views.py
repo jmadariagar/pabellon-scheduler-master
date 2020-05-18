@@ -475,6 +475,7 @@ def updateSchedule(request):
                                              bloque=bloque1)
             id_initial = schedule1.pk
             especialidad1 = schedule1.especialidad
+            duracion1 = schedule1.initial_duration
             schedule2 = Schedule.objects.filter(file=file,
                                                 room=room2,
                                                 day=day2,
@@ -482,10 +483,15 @@ def updateSchedule(request):
 
             if schedule2:
                 especialidad2 = schedule2.first().especialidad
-                schedule2.update(especialidad=especialidad1)
+                duracion2 = schedule2.first().initial_duration
+                schedule2.update(especialidad=especialidad1,
+                                 initial_duration=duracion1,
+                                 remaining_duration=duracion1)
 
             if id_initial:
-                Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2)
+                Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2,
+                                                              initial_duration=duracion2,
+                                                              remaining_duration=duracion2)
 
             especialidades = list(Schedule.objects.filter(file=file).values('especialidad'). \
                 annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by(
@@ -518,6 +524,8 @@ def updateScheduleExtended(request):
                                              bloque='AM')
             id_initial = schedule1.pk
             especialidad1 = schedule1.especialidad
+            duracion1 = schedule1.initial_duration
+            ext1 = schedule1.bloque_extendido
             schedule2 = Schedule.objects.filter(file=file,
                                                 room=room2,
                                                 day=day2,
@@ -525,12 +533,18 @@ def updateScheduleExtended(request):
 
             if schedule2:
                 especialidad2 = schedule2.first().especialidad
+                duracion2 = schedule2.first().initial_duration
+                ext2 = schedule2.first().bloque_extendido
                 schedule2.update(especialidad=especialidad1,
-                                 bloque_extendido=1)
+                                 initial_duration=duracion1,
+                                 remaining_duration=duracion1,
+                                 bloque_extendido=ext1)
 
             if id_initial:
                 Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2,
-                                                              bloque_extendido=0)
+                                                              initial_duration=duracion2,
+                                                              remaining_duration=duracion2,
+                                                              bloque_extendido=ext2)
 
             schedule1 = Schedule.objects.get(file=file,
                                              room=room1,
@@ -538,6 +552,8 @@ def updateScheduleExtended(request):
                                              bloque='PM')
             id_initial = schedule1.pk
             especialidad1 = schedule1.especialidad
+            duracion1 = schedule1.initial_duration
+            ext1 = schedule1.bloque_extendido
             schedule2 = Schedule.objects.filter(file=file,
                                                 room=room2,
                                                 day=day2,
@@ -545,15 +561,18 @@ def updateScheduleExtended(request):
 
             if schedule2:
                 especialidad2 = schedule2.first().especialidad
+                duracion2 = schedule2.first().initial_duration
+                ext2 = schedule2.first().bloque_extendido
                 schedule2.update(especialidad=especialidad1,
-                                 bloque_extendido=1)
+                                 initial_duration=duracion1,
+                                 remaining_duration=duracion1,
+                                 bloque_extendido=ext1)
 
             if id_initial:
                 Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2,
-                                                              bloque_extendido=0)
-
-
-
+                                                              initial_duration=duracion2,
+                                                              remaining_duration=duracion2,
+                                                              bloque_extendido=ext2)
 
 
             especialidades = list(Schedule.objects.filter(file=file).values('especialidad'). \
