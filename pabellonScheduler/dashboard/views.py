@@ -421,6 +421,8 @@ def updateSchedule(request):
 
         try:
             weekdays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+            horas_AM = [file.dia1AM * 60, file.dia2AM * 60, file.dia3AM * 60, file.dia4AM * 60, file.dia5AM * 60]
+            horas_PM = [file.dia1PM * 60, file.dia2PM * 60, file.dia3PM * 60, file.dia4PM * 60, file.dia5PM * 60]
             def weekday(t):
                 if day0 == 'Lunes':
                     shift = 0
@@ -434,15 +436,33 @@ def updateSchedule(request):
                     shift = 4
                 return weekdays[(shift + t - 1) % 5]
 
+            def weekday_duration(dia, bloque):
+                if day0 == 'Lunes':
+                    shift = 0
+                elif day0 == 'Martes':
+                    shift = 1
+                elif day0 == 'Miércoles':
+                    shift = 2
+                elif day0 == 'Jueves':
+                    shift = 3
+                else:
+                    shift = 4
+                semana = [weekdays[(shift + t - 1) % 5] for t in range(1, 6)]
+                for i in range(5):
+                    if dia == semana[i]:
+                        if bloque == 'AM':
+                            return horas_AM[i]
+                        else:
+                            return horas_PM[i]
 
             if bloque1 == 'PM':
                 i = 1
                 salto = 0
                 while True:
                     schedule_aux =Schedule.objects.get(file=file,
-                                             room=room1,
-                                             day=weekday(i),
-                                             bloque=bloque1)
+                                                       room=room1,
+                                                       day=weekday(i),
+                                                       bloque=bloque1)
                     if schedule_aux.bloque_extendido == 1:
                         salto += 1
                     if weekday(i) == day1 and salto == 0:
@@ -450,16 +470,16 @@ def updateSchedule(request):
                     elif weekday(i) == day1:
                         day1 = weekday(i + salto)
                         salto = 0
-                    i +=1
+                    i += 1
 
             if bloque2 == 'PM':
                 i = 1
                 salto = 0
                 while True:
                     schedule_aux =Schedule.objects.get(file=file,
-                                             room=room2,
-                                             day=weekday(i),
-                                             bloque=bloque2)
+                                                       room=room2,
+                                                       day=weekday(i),
+                                                       bloque=bloque2)
                     if schedule_aux.bloque_extendido == 1:
                         salto += 1
                     if weekday(i) == day2 and salto == 0:
@@ -475,7 +495,7 @@ def updateSchedule(request):
                                              bloque=bloque1)
             id_initial = schedule1.pk
             especialidad1 = schedule1.especialidad
-            duracion1 = schedule1.initial_duration
+            duracion1 = weekday_duration(day1, bloque1)
             schedule2 = Schedule.objects.filter(file=file,
                                                 room=room2,
                                                 day=day2,
@@ -483,15 +503,15 @@ def updateSchedule(request):
 
             if schedule2:
                 especialidad2 = schedule2.first().especialidad
-                duracion2 = schedule2.first().initial_duration
+                duracion2 = weekday_duration(day2, bloque2)
                 schedule2.update(especialidad=especialidad1,
-                                 initial_duration=duracion1,
-                                 remaining_duration=duracion1)
+                                 initial_duration=duracion2,
+                                 remaining_duration=duracion2)
 
             if id_initial:
                 Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2,
-                                                              initial_duration=duracion2,
-                                                              remaining_duration=duracion2)
+                                                              initial_duration=duracion1,
+                                                              remaining_duration=duracion1)
 
             especialidades = list(Schedule.objects.filter(file=file).values('especialidad'). \
                 annotate(time=Sum('initial_duration')).annotate(time_h=F('time') / 60).order_by(
@@ -511,6 +531,7 @@ def updateScheduleExtended(request):
             id_result = data['id_result']
             room1 = data['room1']
             room2 = data['room2']
+            day0 = data['day0']
             day1 = data['day1']
             day2 = data['day2']
             file = FileUpload.objects.get(pk=id_result)
@@ -518,13 +539,41 @@ def updateScheduleExtended(request):
             return HttpResponse(_('Invalid request!'))
 
         try:
+            weekdays = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes']
+            horas_AM = [file.dia1AM * 60, file.dia2AM * 60, file.dia3AM * 60, file.dia4AM * 60, file.dia5AM * 60]
+            horas_PM = [file.dia1PM * 60, file.dia2PM * 60, file.dia3PM * 60, file.dia4PM * 60, file.dia5PM * 60]
+
+            def weekday_duration(dia, bloque, ext):
+                if day0 == 'Lunes':
+                    shift = 0
+                elif day0 == 'Martes':
+                    shift = 1
+                elif day0 == 'Miércoles':
+                    shift = 2
+                elif day0 == 'Jueves':
+                    shift = 3
+                else:
+                    shift = 4
+                semana = [weekdays[(shift + t - 1) % 5] for t in range(1, 6)]
+                for i in range(5):
+                    if dia == semana[i]:
+                        if bloque == 'AM':
+                            if ext == 1:
+                                return horas_AM[i] + horas_PM[i]
+                            else:
+                                return horas_AM[i]
+                        else:
+                            if ext == 1:
+                                return 0
+                            else:
+                                return horas_PM[i]
+
             schedule1 = Schedule.objects.get(file=file,
                                              room=room1,
                                              day=day1,
                                              bloque='AM')
             id_initial = schedule1.pk
             especialidad1 = schedule1.especialidad
-            duracion1 = schedule1.initial_duration
             ext1 = schedule1.bloque_extendido
             schedule2 = Schedule.objects.filter(file=file,
                                                 room=room2,
@@ -533,17 +582,16 @@ def updateScheduleExtended(request):
 
             if schedule2:
                 especialidad2 = schedule2.first().especialidad
-                duracion2 = schedule2.first().initial_duration
                 ext2 = schedule2.first().bloque_extendido
                 schedule2.update(especialidad=especialidad1,
-                                 initial_duration=duracion1,
-                                 remaining_duration=duracion1,
+                                 initial_duration=weekday_duration(day2, 'AM', ext1),
+                                 remaining_duration=weekday_duration(day2, 'AM', ext1),
                                  bloque_extendido=ext1)
 
             if id_initial:
                 Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2,
-                                                              initial_duration=duracion2,
-                                                              remaining_duration=duracion2,
+                                                              initial_duration=weekday_duration(day1, 'AM', ext2),
+                                                              remaining_duration=weekday_duration(day1, 'AM', ext2),
                                                               bloque_extendido=ext2)
 
             schedule1 = Schedule.objects.get(file=file,
@@ -552,7 +600,6 @@ def updateScheduleExtended(request):
                                              bloque='PM')
             id_initial = schedule1.pk
             especialidad1 = schedule1.especialidad
-            duracion1 = schedule1.initial_duration
             ext1 = schedule1.bloque_extendido
             schedule2 = Schedule.objects.filter(file=file,
                                                 room=room2,
@@ -561,17 +608,16 @@ def updateScheduleExtended(request):
 
             if schedule2:
                 especialidad2 = schedule2.first().especialidad
-                duracion2 = schedule2.first().initial_duration
                 ext2 = schedule2.first().bloque_extendido
                 schedule2.update(especialidad=especialidad1,
-                                 initial_duration=duracion1,
-                                 remaining_duration=duracion1,
+                                 initial_duration=weekday_duration(day2, 'PM', ext1),
+                                 remaining_duration=weekday_duration(day2, 'PM', ext1),
                                  bloque_extendido=ext1)
 
             if id_initial:
                 Schedule.objects.filter(pk=id_initial).update(especialidad=especialidad2,
-                                                              initial_duration=duracion2,
-                                                              remaining_duration=duracion2,
+                                                              initial_duration=weekday_duration(day1, 'PM', ext2),
+                                                              remaining_duration=weekday_duration(day1, 'PM', ext2),
                                                               bloque_extendido=ext2)
 
 
@@ -695,7 +741,7 @@ def export_xls(request, id_result):
             response = HttpResponse(content_type='application/ms-excel')
             response['Content-Disposition'] = 'attachment; filename="Lista_de_Pacientes.xls"'
             especialidades = Schedule.objects.filter(file=file).values('especialidad'). \
-            annotate(time=Sum('initial_duration')).order_by('-time')
+                annotate(time=Sum('initial_duration')).order_by('-time')
             wb = xlwt.Workbook(encoding='utf-8')
             for e in especialidades:
                 titulo = e['especialidad'][0:22]
