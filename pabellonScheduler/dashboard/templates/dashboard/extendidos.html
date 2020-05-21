@@ -102,6 +102,7 @@
 
         if(pos1 && pos2){
             if(pos1[1]!==pos2[1] || pos1[2]!==pos2[2]){
+              var day0 = headertable[0];
               var day1 = headertable[pos1[2]-1];
               console.log('day1: '+ day1)
               var day2 = headertable[pos2[2]-1]
@@ -110,18 +111,19 @@
               console.log('room1: '+ room1)
               var room2 = Math.floor(pos2[1]);
               console.log('room2: '+ room2)
-              updateScheduleExtended(day1, day2, room1, room2);
+              updateScheduleExtended(day0, day1, day2, room1, room2);
             }
         }
 
       };
 
-      function updateScheduleExtended(day1, day2, room1, room2) {
+      function updateScheduleExtended(day0,day1, day2, room1, room2) {
 
         var http = new XMLHttpRequest();
         var url = "{% url 'update-schedule-extended' %}";
         var data = JSON.stringify({
           'id_result': {{id_result}},
+          'day0': day0,
           'day1': day1,
           'day2': day2,
           'room1': room1,

@@ -301,12 +301,12 @@ def run_model(queue, programming_date, file):
         if n <= 4:
             restriccionpara5 = True
         if n <= 3:
+            roundUpSwitch = True
             roundLowSwitch = True
         elif n <= 2:
             roundUpSwitch = True
         elif n <= 1:
             roundLowSwitch = True
-            roundUpSwitch = True
         return roundLowSwitch, roundUpSwitch, restriccionpara3, restriccionpara5, resto
 
     iteracionInfeasible = 0
@@ -344,13 +344,13 @@ def run_model(queue, programming_date, file):
         if resto:
             sumAMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_AM[s, t] for s in specialties),
                                                                  sense=plp.LpConstraintEQ,
-                                                                 rhs=pabellones_disponibles_AM(R,t),
+                                                                 rhs=pabellones_disponibles_AM(R, t),
                                                                  name="SumAM_{0}".format(t)))
                            for t in times}
 
             sumPMConstr = {t: add_constr(model, plp.LpConstraint(e=plp.lpSum(b_PM[s, t] for s in specialties),
                                                                  sense=plp.LpConstraintEQ,
-                                                                 rhs=pabellones_disponibles_PM(R,t),
+                                                                 rhs=pabellones_disponibles_PM(R, t),
                                                                  name="SumPM_{0}".format(t)))
                            for t in times}
 
@@ -376,7 +376,7 @@ def run_model(queue, programming_date, file):
                                                                  name="Restric5h2_{0}".format(i)))
                            for i in range(len(specialties5hrs))}
 
-        objective = plp.lpSum(w[s] * (q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t]) for s in specialties for t in times)
+        objective = plp.lpSum(h[s] * (q_AM(t) * b_AM[s, t] + q_PM(t) * b_PM[s, t]) for s in specialties for t in times)
 
         model.sense = plp.LpMaximize
         model.setObjective(objective)
@@ -387,6 +387,7 @@ def run_model(queue, programming_date, file):
 
         result = plp.LpStatus[model.status]
 
+    print('iteracionInfeasible: ', iteracionInfeasible)
     blocks = pd.DataFrame(index=specialties,
                           columns=['% Required Time', 'Fractional hours', 'Offered AM blocks', 'Offered PM blocks',
                                    'Offered hours'])
